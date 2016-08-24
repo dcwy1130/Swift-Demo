@@ -13,6 +13,8 @@
 		0C71CB961D34BF5900731968 /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 0C71CB951D34BF5900731968 /* Images.xcassets */; };
 		0C71CB991D34BF5900731968 /* LaunchScreen.xib in Resources */ = {isa = PBXBuildFile; fileRef = 0C71CB971D34BF5900731968 /* LaunchScreen.xib */; };
 		0C71CBA51D34BF5900731968 /* Swifter_DemoTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C71CBA41D34BF5900731968 /* Swifter_DemoTests.swift */; };
+		0C71CBB41D34C01E00731968 /* Copyable.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C71CBB31D34C01E00731968 /* Copyable.swift */; };
+		0C79F9EF1D472BAD0095884E /* ZDXView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0C79F9EE1D472BAD0095884E /* ZDXView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,6 +38,9 @@
 		0C71CB9E1D34BF5900731968 /* Swifter DemoTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Swifter DemoTests.xctest"; sourceTree = BUILT_PRODUCTS_DIR; };
 		0C71CBA31D34BF5900731968 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		0C71CBA41D34BF5900731968 /* Swifter_DemoTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Swifter_DemoTests.swift; sourceTree = "<group>"; };
+		0C71CBAE1D34BFA900731968 /* Swifter Demo-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "Swifter Demo-Bridging-Header.h"; sourceTree = "<group>"; };
+		0C71CBB31D34C01E00731968 /* Copyable.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Copyable.swift; sourceTree = "<group>"; };
+		0C79F9EE1D472BAD0095884E /* ZDXView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = ZDXView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -77,12 +82,15 @@
 		0C71CB8B1D34BF5900731968 /* Swifter Demo */ = {
 			isa = PBXGroup;
 			children = (
+				0C79F9ED1D472B990095884E /* CustomView */,
+				0C71CBB11D34BFD000731968 /* Protocol */,
 				0C71CB8E1D34BF5900731968 /* AppDelegate.swift */,
 				0C71CB901D34BF5900731968 /* ViewController.swift */,
 				0C71CB921D34BF5900731968 /* Main.storyboard */,
 				0C71CB951D34BF5900731968 /* Images.xcassets */,
 				0C71CB971D34BF5900731968 /* LaunchScreen.xib */,
 				0C71CB8C1D34BF5900731968 /* Supporting Files */,
+				0C71CBAE1D34BFA900731968 /* Swifter Demo-Bridging-Header.h */,
 			);
 			path = "Swifter Demo";
 			sourceTree = "<group>";
@@ -110,6 +118,22 @@
 				0C71CBA31D34BF5900731968 /* Info.plist */,
 			);
 			name = "Supporting Files";
+			sourceTree = "<group>";
+		};
+		0C71CBB11D34BFD000731968 /* Protocol */ = {
+			isa = PBXGroup;
+			children = (
+				0C71CBB31D34C01E00731968 /* Copyable.swift */,
+			);
+			path = Protocol;
+			sourceTree = "<group>";
+		};
+		0C79F9ED1D472B990095884E /* CustomView */ = {
+			isa = PBXGroup;
+			children = (
+				0C79F9EE1D472BAD0095884E /* ZDXView.swift */,
+			);
+			path = CustomView;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -156,11 +180,14 @@
 		0C71CB811D34BF5900731968 /* Project object */ = {
 			isa = PBXProject;
 			attributes = {
-				LastUpgradeCheck = 0630;
+				LastSwiftMigration = 0730;
+				LastSwiftUpdateCheck = 0730;
+				LastUpgradeCheck = 0730;
 				ORGANIZATIONNAME = GroupFly;
 				TargetAttributes = {
 					0C71CB881D34BF5900731968 = {
 						CreatedOnToolsVersion = 6.3.2;
+						DevelopmentTeam = LKE449VVE5;
 					};
 					0C71CB9D1D34BF5900731968 = {
 						CreatedOnToolsVersion = 6.3.2;
@@ -213,7 +240,9 @@
 			buildActionMask = 2147483647;
 			files = (
 				0C71CB911D34BF5900731968 /* ViewController.swift in Sources */,
+				0C71CBB41D34C01E00731968 /* Copyable.swift in Sources */,
 				0C71CB8F1D34BF5900731968 /* AppDelegate.swift in Sources */,
+				0C79F9EF1D472BAD0095884E /* ZDXView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -276,6 +305,7 @@
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu99;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -342,9 +372,18 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				INFOPLIST_FILE = "Swifter Demo/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 7.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.GF.Swifter-Demo";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "Swifter Demo/Swifter Demo-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Debug;
 		};
@@ -352,9 +391,17 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				INFOPLIST_FILE = "Swifter Demo/Info.plist";
+				IPHONEOS_DEPLOYMENT_TARGET = 7.1;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "com.GF.Swifter-Demo";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				PROVISIONING_PROFILE = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "Swifter Demo/Swifter Demo-Bridging-Header.h";
+				TARGETED_DEVICE_FAMILY = 1;
 			};
 			name = Release;
 		};
@@ -372,6 +419,7 @@
 				);
 				INFOPLIST_FILE = "Swifter DemoTests/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "GF.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Swifter Demo.app/Swifter Demo";
 			};
@@ -387,6 +435,7 @@
 				);
 				INFOPLIST_FILE = "Swifter DemoTests/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
+				PRODUCT_BUNDLE_IDENTIFIER = "GF.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Swifter Demo.app/Swifter Demo";
 			};
@@ -411,6 +460,7 @@
 				0C71CBAA1D34BF5900731968 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 		0C71CBAB1D34BF5900731968 /* Build configuration list for PBXNativeTarget "Swifter DemoTests" */ = {
 			isa = XCConfigurationList;
@@ -419,6 +469,7 @@
 				0C71CBAD1D34BF5900731968 /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
 	};

@@ -16,6 +16,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
         // Override point for customization after application launch.
+        UINavigationBar.appearance().barTintColor = UIColor(white: 0.1, alpha: 1.0)         // 背景颜色
+        UINavigationBar.appearance().tintColor = UIColor.whiteColor()       // 返回字体颜色
+        UINavigationBar.appearance().titleTextAttributes = [NSForegroundColorAttributeName : UIColor.whiteColor() , NSFontAttributeName : UIFont.boldSystemFontOfSize(18)]    // title标题颜色和字体
+        UIApplication.sharedApplication().statusBarStyle = UIStatusBarStyle.LightContent
         return true
     }
 
@@ -43,4 +47,85 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
 
 }
+
+
+extension UIViewController {
+//    viewDidLoad
+    
+    // App启动时调用的方法
+    class func ZDX_swizzleViewDidLoad() {
+        struct ZDX_swizzleToken {
+            static var onceToken: dispatch_once_t = 0
+        }
+        dispatch_once(&ZDX_swizzleToken.onceToken) {
+            // 用于获取该类型的方法实现
+            let cls: AnyClass! = UIViewController.self
+            
+            let originalSelector = #selector(UIViewController.viewDidLoad)
+            let swizzledSelector = #selector(UIViewController.ZDX_viewDidLoad)
+            
+            let originalMethod = class_getInstanceMethod(cls, originalSelector)
+            let swizzledMethod = class_getInstanceMethod(cls, swizzledSelector)
+            
+            method_exchangeImplementations(originalMethod, swizzledMethod)
+            
+        }
+    }
+    
+    override public class func initialize() {
+        // +initialize 会在当前类以及它的子类被初始化时调用，保证安全性
+        UIViewController.ZDX_swizzleViewDidLoad()
+    }    
+    
+    public func ZDX_viewDidLoad() {
+        print("Swizzle Come in ...")
+        let returnButtonItem = UIBarButtonItem()
+        returnButtonItem.title = "返回";
+        returnButtonItem.setTitleTextAttributes([ NSFontAttributeName : UIFont.systemFontOfSize(15)], forState: UIControlState.Normal)
+        self.navigationItem.backBarButtonItem = returnButtonItem;
+        ZDX_viewDidLoad()
+    }
+}
+
+
+//// 钩子方法
+//extension UIControl {
+//    // App启动时调用此方法
+//    class func ZDX_swizzleSendAction() {
+//        struct ZDX_swizzleToken {
+//            static var onceToken: dispatch_once_t = 0
+//        }
+//        dispatch_once(&ZDX_swizzleToken.onceToken) {
+//            let cls: AnyClass! = UIControl.self
+//            
+//            let originalSelector = Selector("sendAction(_:to:forEvent:)")
+//            let swizzledSelector = Selector("ZDX_sendAction(_:to:forEvent:)")
+//            
+//            let originalMethod = class_getInstanceMethod(cls, originalSelector)
+//            let swizzledMethod = class_getInstanceMethod(cls, swizzledSelector)
+//            // 交换方法的具体实现
+//            method_exchangeImplementations(originalMethod, swizzledMethod)
+//        }
+//    }
+//    
+//    // 需要替换的方法
+//    public func ZDX_sendAction(action: Selector, to: AnyObject!, forEvent: UIEvent!) {
+//        
+//        // 全局计数器
+//        struct ZDX_buttonTapCounter {
+//            static var count: Int = 0
+//        }
+//        
+//        ZDX_buttonTapCounter.count += 1
+//        println("您点击了\(ZDX_buttonTapCounter.count)次")
+//        ZDX_sendAction(action, to: to, forEvent: forEvent)
+//    }
+//    
+//    override public class func initialize() {
+//        // +initialize 会在当前类以及它的子类被初始化时调用，保证安全性
+//        
+//        UIControl.ZDX_swizzleSendAction()
+//    }
+//}
+
 
