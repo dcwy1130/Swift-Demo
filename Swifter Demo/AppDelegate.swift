@@ -12,14 +12,20 @@ import UIKit
 class AppDelegate: UIResponder, UIApplicationDelegate {
 
     var window: UIWindow?
-
-
+    
     func application(application: UIApplication, didFinishLaunchingWithOptions launchOptions: [NSObject: AnyObject]?) -> Bool {
         // Override point for customization after application launch.
         UINavigationBar.appearance().barTintColor = UIColor(white: 0.1, alpha: 1.0)         // 背景颜色
         UINavigationBar.appearance().tintColor = UIColor.whiteColor()       // 返回字体颜色
         UINavigationBar.appearance().titleTextAttributes = [NSForegroundColorAttributeName : UIColor.whiteColor() , NSFontAttributeName : UIFont.boldSystemFontOfSize(18)]    // title标题颜色和字体
         UIApplication.sharedApplication().statusBarStyle = UIStatusBarStyle.LightContent
+        
+        let APView = ZDXAdvertisementPageView(frame: self.window!.frame, SkipControlAlignment: .RightTop, SkipControlStyle: .Annular, Duration: 5, ImageURL: NSURL(string: "http://huidiantong.groupfly.cn/ImgUpload/Main/2016_08/201608170325397.png")!, addToView: self.window!.rootViewController!.view)
+        // 设置点击广告图片代理
+        APView.delegate = {
+            let msg = $0 == 0 ? "跳过" : "广告页"
+            print("点击了\(msg)")
+        }
         return true
     }
 

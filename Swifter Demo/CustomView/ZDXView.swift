@@ -8,7 +8,8 @@
 
 import UIKit
 
-/****************************************** 移动滑块类视图 ******************************************/
+/******************************* 移动滑块类视图 *******************************/
+
 /*
     本视图为通用的移动滑块类视图，适用于根据分类显示分类下的内容，可用于带内容视图和不带内容视图2种方式
     用法:
@@ -17,9 +18,10 @@ import UIKit
     // moveView = ZDXMoveView(frame: CGRectMake(0, 0, CGRectGetWidth(self.contentView.bounds), 44), titles: ["全部", "待付款", "待发货", "待收货", "待评价", "退款/售后"])
     self.contentView.addSubview(moveView)
 */
+// MARK: - 移块滚动视图
 
-typealias Callback = Int -> ()                                  // 回调block
-let TITLE_FONT: UIFont = UIFont.systemFontOfSize(15)            // 标题字体大小
+typealias MVCallback = Int -> ()                                  // 回调block
+let TITLE_FONT: UIFont = UIFont.systemFontOfSize(14)            // 标题字体大小
 let TITLE_HEIGHT: CGFloat = 44.0                                // 标题栏高度
 let REUSE_IDENTIFIER: String = "ZDXCollectionViewCell"          // 重用标识符
 let MOVE_VIEW_HEIGHT: CGFloat = 3.0                             // 滑块的高度
@@ -120,7 +122,7 @@ final public class ZDXMoveView: UIView {
     /// 默认时的颜色
     var normalColor: UIColor = DEFAULT_NORMAL_COLOR
     /// 点击某个的回调
-    var delegate: Callback?
+    var delegate: MVCallback?
     
     /**
      默认初始化方法：带内容
@@ -175,9 +177,14 @@ final public class ZDXMoveView: UIView {
         self.contentScrollView.contentSize = CGSizeMake(self.viewWidth * CGFloat(self.titles.count), self.viewHeight - TITLE_HEIGHT)
         // Frame修改后，Cell的Size也改变了，因为需要刷新布局
         self.topCollectionView.setCollectionViewLayout(self.layout, animated: true)
-        // 更新滑块位置
-        self.moveView.center.x = self.titleWidth / 2
-        print(NSStringFromCGRect(rect), terminator: "\n")
+        // 更新滑块位置 - 修复App挂起后唤醒问题
+        self.moveView.frame.size.width = self.titleTextWidth[currentIndex]
+        if let cell = self.topCollectionView.cellForItemAtIndexPath(NSIndexPath(forItem: currentIndex, inSection: 0)) {
+            self.moveView.center.x = cell.center.x
+        } else {
+            self.moveView.center.x = self.titleWidth / 2
+        }
+//        print(NSStringFromCGRect(rect), terminator: "\n")
     }
     
     private func initWithFrame(frame: CGRect) {
@@ -246,7 +253,7 @@ final public class ZDXMoveView: UIView {
     }
 }
 
-// MARK: - UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, UIScrollViewDelegate 系列方法
+// MARK: 代理方法
 extension ZDXMoveView: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout, UIScrollViewDelegate {
     public func collectionView(collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
         return self.titles.count
@@ -288,11 +295,12 @@ extension ZDXMoveView: UICollectionViewDataSource, UICollectionViewDelegate, UIC
     }
 }
 
-/****************************************** 无限循环滚动视图 ******************************************/
+/******************************* 无限循环滚动视图 *******************************/
 /**
  *  考虑到此控件主要应用于广告位的循环滚动，而广告位的数据通常从网络获取，故在设计上采用：
  *  数据源协议来获取广告位视图，代理和Block均可获取点击视图的回调事件
  */
+// MARK: - 广告页视图无限循环滚动视图
 
 /// 常量
 let DEFAULT_PAGE_INDICATOR_COLOR: UIColor = UIColor(white: 0.8, alpha: 1.0)
@@ -324,7 +332,7 @@ final public class ZDXLoopScrollView: UIView {
     /// 默认时的颜色
     var currentPageIndicatorColor: UIColor = DEFAULT_CURRENT_PAGE_INDICATOR_COLOR
     /// 点击某个的回调
-    var callback: Callback?
+    var callback: MVCallback?
     
     weak public var dataSource: ZDXLoopScrollViewDataSource?
     weak public var delegate: ZDXLoopScrollViewDelegate?
@@ -388,6 +396,7 @@ final public class ZDXLoopScrollView: UIView {
     
 }
 
+// MARK: 代理方法
 extension ZDXLoopScrollView: UIScrollViewDelegate {
     
 }
@@ -426,14 +435,317 @@ extension NSTimer {
 
 
 
+/******************************* App启动后的广告页 *******************************/
+/**
+ *  App启动后停留几秒的广告页，一般为调用网络接口展示
+ */
 
+// Advertisement Page View
+// MARK: - 广告页视图
 
+typealias APVCallback = (Int) -> ()
+let DEFAULT_DURATION: Int = 4                   // 广告持续4秒
+let COUNTDOWN_SIZE: CGSize = CGSizeMake(60, 30)   // 数字（矩形）
+let ANNULAR_SIZE: CGSize = CGSizeMake(50, 50)   // 环形（圆形）
+let ADVERTISEMENT_PAGE_IMAGE_NAME: String = "AdvertisementPageImage"    // 广告图片缓存名称
 
+/// 跳过按钮的对齐方式
+public enum SkipControlAlignment : Int {
+    case LeftTop        // 左上角
+    case RightTop       // 右上角
+    case LeftBottom     // 左下角
+    case RightBottom    // 右下角
+}
 
+/// 跳过按钮的样式
+/// 跳过按钮的对齐方式
+public enum SkipControlStyle : Int {
+    case CountDown      // 倒计时（矩形）
+    case Annular        // 环形（圆形）
+}
 
-
-
-
+final public class ZDXAdvertisementPageView: UIView {
+    private var alignment: SkipControlAlignment
+    private var style: SkipControlStyle
+    private var duration: Int
+    private var imageURL: NSURL
+    
+    private var imageView: UIImageView!                 // 背景广告图片
+    private var skipView: UIView!                       // 跳过视图
+    private var countDownLabel: UILabel?                // 倒计时
+    private var timer: NSTimer!                         // 定时器
+    private var progressView: ZDXRoundProgressView?     // 环形进度视图
+    /// 广告图片缓存路径
+    lazy private(set) var cachePath: String = {
+        var cachePath = NSSearchPathForDirectoriesInDomains(.DocumentDirectory, .UserDomainMask, true).last!
+        var cachepathNS = cachePath as NSString
+        cachepathNS = cachepathNS.stringByAppendingPathComponent(ADVERTISEMENT_PAGE_IMAGE_NAME)
+        cachePath = cachepathNS as String
+        return cachePath
+    }()
+    var delegate: APVCallback?                          // 点击回调  0是视图消失   1是广告页
+    
+    init(frame: CGRect, SkipControlAlignment alignment: SkipControlAlignment, SkipControlStyle style: SkipControlStyle, Duration duration: Int, ImageURL imageURL: NSURL, addToView aView: UIView) {
+        // 检查ImageURL是否有效
+//        var error: NSError?
+//        // 只能用于检查本地文件路径
+//        if !imageURL.checkResourceIsReachableAndReturnError(&error) {
+//            print("Error: \(error)")
+//            return nil
+//        }
+        self.alignment = alignment
+        self.style = style
+        self.imageURL = imageURL
+        self.duration = duration
+        if (duration <= 0 ) {
+            self.duration = DEFAULT_DURATION
+        }
+        super.init(frame: frame)
+        backgroundColor = UIColor.whiteColor()
+        if (self.style == .CountDown) {
+            self.timer = NSTimer.scheduledTimerWithTimeInterval(1.0, target: self, selector: #selector(countDown), userInfo: nil, repeats: true)
+        } else {
+            self.timer = NSTimer.scheduledTimerWithTimeInterval(Double(self.duration) / 100.0, target: self, selector: #selector(countDown), userInfo: nil, repeats: true)
+            self.duration = 100
+        }
+        NSRunLoop.currentRunLoop().addTimer(self.timer, forMode: NSRunLoopCommonModes)
+        self.timer.pause()
+        // 配置界面
+        setupUI()
+        aView.addSubview(self)
+    }
+    
+    required public init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
+    
+    deinit {
+        print("\(NSStringFromClass(ZDXAdvertisementPageView.self))销毁了")
+    }
+    
+    func setupUI() {
+        let frame = self.frame
+        // 广告图片视图
+        self.imageView = UIImageView(frame: frame)
+        addSubview(self.imageView)
+        // 点击广告图片的Button
+        let backgroundBtn = UIButton(frame: frame)
+        backgroundBtn.tag = 1
+        backgroundBtn.addTarget(self, action: #selector(choose), forControlEvents: .TouchUpInside)
+        addSubview(backgroundBtn)
+        // 设置广告图片
+        setupImageView()
+        
+        // 跳转视图
+        var skipViewFrame: CGRect = CGRectZero
+        let skipViewSize: CGSize = self.style == .CountDown ? COUNTDOWN_SIZE : ANNULAR_SIZE
+        var skipViewOrigin: CGPoint = CGPointZero
+        let spacing: CGFloat = 10.0
+        let statusBarHeight: CGFloat = 20.0
+        switch self.alignment {
+            case .LeftTop:
+                skipViewOrigin.x = spacing
+                skipViewOrigin.y = spacing + statusBarHeight
+                break
+            case .RightTop:
+                skipViewOrigin.x = CGRectGetWidth(frame) - skipViewSize.width - spacing
+                skipViewOrigin.y = spacing + statusBarHeight
+                break
+            case .LeftBottom:
+                skipViewOrigin.x = spacing
+                skipViewOrigin.y = CGRectGetHeight(frame) - skipViewSize.height - spacing
+                break
+            case .RightBottom:
+                skipViewOrigin.x = CGRectGetWidth(frame) - skipViewSize.width - spacing
+                skipViewOrigin.y = CGRectGetHeight(frame) - skipViewSize.height - spacing
+                break
+        }
+        skipViewFrame.size = skipViewSize
+        skipViewFrame.origin = skipViewOrigin
+        self.skipView = UIView(frame: skipViewFrame)
+        addSubview(self.skipView)
+        // 设置跳转视图内容
+        setupSkipView()
+    }
+    
+    // 设置广告图片内容
+    private func setupImageView() {
+        // 1.将网络图片下载下来
+        let request: NSURLRequest = NSURLRequest(URL: self.imageURL)
+        let session: NSURLSession = NSURLSession.sharedSession()
+        
+        let task = session.dataTaskWithRequest(request) { (data, response, error) in
+            var image: UIImage? = nil
+            if (error != nil) {
+                // 2.1 网络异常，从缓存里读取
+                image = self.imageWithCache()
+            } else {
+                // 2.2.1 网络正常，读取返回数据
+                if let JSONData = data {
+                    // 2.2.1.1 返回数据为图片，缓存到本地
+                    if let imageTemp = UIImage(data: JSONData) {
+                        image = imageTemp
+                        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), {
+//                            print("Path: \(self.cachePath)")
+                            if (JSONData.writeToFile(self.cachePath, atomically: true)) {
+                                print("Cache Success")
+                            } else {
+                                print("Cache Failure")
+                            }
+                        })
+                    } else {
+                        // 2.2.1.1 返回数据不为图片，读取缓存数据
+                        image = self.imageWithCache()
+                    }
+                } else {
+                    //2.2.2 网络正常，无返回数据，读取缓存数据
+                    image = self.imageWithCache()
+                }
+            }
+            
+            dispatch_async(dispatch_get_main_queue(), {
+                if let APImage = image {
+                    // 3.设置图片
+                    self.imageView.image = APImage;
+                    self.timer.restart()
+                } else {
+                    self.dismiss()
+                }
+            })
+        }
+        task.resume()
+    }
+    
+    // 获取缓存数据
+    private func imageWithCache() -> UIImage? {
+        var image: UIImage? = nil
+        if let imageData = NSData(contentsOfFile: self.cachePath) {
+            image = UIImage(data: imageData)
+        }
+        return image
+    }
+    
+    // 设置跳转视图内容
+    private func setupSkipView() {
+        // 背景图
+        self.skipView.backgroundColor = UIColor ( red: 0.0, green: 0.0, blue: 0.0, alpha: 0.6 )
+        self.skipView.layer.cornerRadius = CGRectGetHeight(self.skipView.frame) / 2.0
+        self.skipView.layer.masksToBounds = true
+        
+        // 跳过按钮
+        let skipButton: UIButton = UIButton(frame: self.skipView.bounds)
+        skipButton.tag = 0
+        skipButton.addTarget(self, action: #selector(choose), forControlEvents: .TouchUpInside)
+        self.skipView.addSubview(skipButton)
+        
+        // Label
+        let skipLabel: UILabel = UILabel()
+        var skipRect: CGRect = self.skipView.bounds
+        skipLabel.text = "跳过"
+        skipLabel.textAlignment = .Center
+        skipLabel.textColor = UIColor.whiteColor()
+        skipLabel.font = UIFont.boldSystemFontOfSize(15.0)
+        
+        if (self.style == .CountDown) {
+            let skipViewFrame = self.skipView.bounds
+            var countDownRect: CGRect = CGRectZero
+            CGRectDivide(skipViewFrame, &skipRect, &countDownRect, CGRectGetWidth(skipViewFrame) / 3.0 * 2.0, .MinXEdge)
+            skipLabel.font = UIFont.boldSystemFontOfSize(13.0)
+            // 倒计时
+            self.countDownLabel = UILabel(frame: countDownRect)
+            self.countDownLabel!.text = "\(self.duration)"
+//            self.countDownLabel!.textAlignment = .Center
+            self.countDownLabel!.textColor = UIColor.orangeColor()
+            self.countDownLabel!.font = UIFont.boldSystemFontOfSize(13.0)
+            self.skipView.addSubview(self.countDownLabel!)
+        } else {
+            self.progressView = ZDXRoundProgressView(frame: CGRectMake(1, 1, CGRectGetWidth(self.skipView.bounds) - 2, CGRectGetHeight(self.skipView.bounds) - 2))
+            self.skipView.addSubview(self.progressView!)
+        }
+        skipLabel.frame = skipRect
+        self.skipView.addSubview(skipLabel)
+    }
+    
+    // 倒计时方法
+    @objc private func countDown() {
+        if (self.duration <= 0) {
+            // 停止倒计时，消失
+            self.dismiss()
+        } else {
+            if (self.style == .CountDown) {
+                self.countDownLabel!.text = "\(self.duration)"
+            } else {
+                // 环形
+                self.progressView?.progress = CGFloat(self.duration)
+            }
+            self.duration -= 1
+        }
+    }
+    
+    // 选择按钮
+    @objc private func choose(btn: UIButton) {
+        if (self.delegate != nil) {
+            self.delegate!(btn.tag) // 0 跳过 1 广告页
+        }
+        self.dismiss()
+    }
+    
+    // 消失动画
+    @objc private func dismiss() {
+        if (self.timer.valid) {
+            self.timer.invalidate()
+            self.timer = nil
+        }
+        UIView.animateWithDuration(0.8, delay:0, options:.CurveLinear, animations: {
+                self.layer.opacity = 0.0
+                self.transform = CGAffineTransformMakeScale(1.3, 1.3) })
+        { (finished) in self.removeFromSuperview() }
+    }
+    
+    // MARK 环形视图
+    final class ZDXRoundProgressView: UIView {
+        
+        override init(frame: CGRect) {
+            super.init(frame: frame)
+            userInteractionEnabled = false
+        }
+        
+        required init?(coder aDecoder: NSCoder) {
+            fatalError("init(coder:) has not been implemented")
+        }
+        
+        var progress: CGFloat = 100.0 {
+            didSet {
+                self.setNeedsDisplay()
+            }
+        }
+        
+        override func drawRect(rect: CGRect) {
+            // 清除绘图
+            let context = UIGraphicsGetCurrentContext()
+            CGContextClearRect(context, rect)
+            let lineWidth: CGFloat = 2.0
+            let center = CGPointMake(CGRectGetMidX(rect), CGRectGetMidY(rect))
+            let radius = (CGRectGetWidth(self.bounds) - lineWidth) / 2
+            let startAngle = CGFloat(-1 / 2 * M_PI) // -1/2𝝿
+            // 只用改变结束弧度即可
+            // (-5/2𝝿) -> (-2𝝿) -> (-3/2𝝿) -> (-𝝿) -> (-1/2𝝿)
+            let endAngle = startAngle - CGFloat(self.progress / 100.0 * 2.0 * CGFloat(M_PI))
+            let path = UIBezierPath(arcCenter: center, radius: radius, startAngle: startAngle, endAngle: endAngle, clockwise: false)
+            path.lineCapStyle = .Round
+            path.lineJoinStyle = .Round
+            path.lineWidth = lineWidth;
+            let strokeColor = UIColor.whiteColor()
+            strokeColor.set()
+            path.stroke()
+        }
+        
+        // 角度转换成弧度
+        private func degreesToRadians(degrees: CGFloat) -> CGFloat {
+            return ((CGFloat(M_PI) * degrees) / CGFloat(180.0))
+        }
+    }
+}
 
 
 
