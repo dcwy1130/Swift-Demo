@@ -2,29 +2,31 @@
 //  ViewController.swift
 //  Swifter Demo
 //
-//  Created by Mac on 16/7/12.
+//  Created by ZDX on 16/7/12.
 //  Copyright (c) 2016年 GroupFly. All rights reserved.
 //
 
 import UIKit
 import CoreData
 
-class ViewController: UIViewController {
+class ViewController: UIViewController, ZDXLoopScrollViewDataSource, ZDXLoopScrollViewDelegate {
     var titleLabel: UILabel!
     var moveView: ZDXMoveView!
+    var loopScrollView: ZDXLoopScrollView!
+    var imageNames: [String] = ["2", "3", "4", "5", "6"]
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var contentView: UIView!
     @IBOutlet weak var label: UILabel!
     
+    
+    override func viewDidDisappear(animated: Bool) {
+        super.viewDidDisappear(animated)
+        // 销毁
+        loopScrollView.endAutoLoop()
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
-//        self.addChildViewController(UIStoryboard(name: "Main", bundle: nil).instantiateViewControllerWithIdentifier("ViewController1") )
-//        self.addChildViewController(UIStoryboard(name: "Main", bundle: nil).instantiateViewControllerWithIdentifier("ViewController2") )
-//        self.addChildViewController(UIStoryboard(name: "Main", bundle: nil).instantiateViewControllerWithIdentifier("ViewController3") )
-//        self.addChildViewController(UIStoryboard(name: "Main", bundle: nil).instantiateViewControllerWithIdentifier("ViewController4") )
-//        self.addChildViewController(UIStoryboard(name: "Main", bundle: nil).instantiateViewControllerWithIdentifier("ViewController5") )
-//        self.addChildViewController(UIStoryboard(name: "Main", bundle: nil).instantiateViewControllerWithIdentifier("ViewController5") )
-        
         let childVCs = (1..<6).map {  UIStoryboard(name: "Main", bundle: nil).instantiateViewControllerWithIdentifier("ViewController" + "\($0)") }
         childVCs.forEach(self.addChildViewController)
         1.stride(to: 9, by: 2)
@@ -197,14 +199,40 @@ class ViewController: UIViewController {
             views.append(vc.view)
         }
 //        self.navigationController?.navigationBar.translucent = false
-        moveView = ZDXMoveView(frame: self.contentView.bounds, titles: ["全部", "待付款", "待发货", "待收货", "待评价", "退款/售后"], contentViews:views)
-//        moveView = ZDXMoveView(frame: CGRectMake(0, 0, CGRectGetWidth(self.contentView.bounds), 44), titles: ["全部", "待付款", "待发货", "待收货", "待评价", "退款/售后"])
+//        moveView = ZDXMoveView(frame: self.contentView.bounds, titles: ["全部", "待付款", "待发货", "待收货", "待评价", "退款/售后"], contentViews:views)
+        moveView = ZDXMoveView(frame: CGRectMake(0, 0, CGRectGetWidth(self.contentView.bounds), 44), titles: ["全部", "待付款", "待发货", "待收货", "待评价", "退款/售后"])
 //        print(NSStringFromCGRect(moveView.bounds), terminator: "")
-        self.contentView.addSubview(moveView)
-        moveView.delegate = {
-            print("点了第\($0)个")
-            self.label.text = "点了第\($0)个"
+//        self.contentView.addSubview(moveView)
+        moveView.delegate = { [weak self] (index: Int) in
+            print("点了第\(index)个")
+            // 弱引用
+            if let strongSelf = self {
+                strongSelf.label.text = "点了第\(index)个"
+            }
         }
+        
+        loopScrollView = ZDXLoopScrollView(frame: CGRectMake(0, 0, CGRectGetWidth(self.contentView.bounds), 200), alignment: .Center, animationScrollDuration: 3.0)
+        loopScrollView.dataSource = self
+        loopScrollView.delegate = self
+        loopScrollView.callback = {
+            print("点了第\($0)个")
+        }
+        self.contentView.addSubview(loopScrollView)
+    }
+    
+    func numberOfContentViewsInLoopScrollView(loopScrollView: ZDXLoopScrollView) -> Int {
+        return imageNames.endIndex
+    }
+    
+    func loopScrollView(loopScrollView: ZDXLoopScrollView, contentViewAtIndex index: Int) -> UIView {
+//        print("Rect: \(NSStringFromCGRect(loopScrollView.bounds))")
+        let imageView = UIImageView(frame: loopScrollView.bounds)
+        imageView.image = UIImage(named: imageNames[index])
+        return imageView
+    }
+    
+    func loopScrollView(loopScrollView: ZDXLoopScrollView, didSelectContentViewAtIndex index: Int) {
+        print("\(#function) 点了第\(index)个")
     }
     
     func test11() {

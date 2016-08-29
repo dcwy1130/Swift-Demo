@@ -1,0 +1,25 @@
+{
+  "DVTSourceControlWorkspaceBlueprintPrimaryRemoteRepositoryKey" : "98c428a9-e7d8-505e-28a4-ce57b7db7bff++505",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+    "98c428a9-e7d8-505e-28a4-ce57b7db7bff++505" : {
+
+    }
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "98c428a9-e7d8-505e-28a4-ce57b7db7bff++505" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "9F8ACC53-0607-45BA-87B8-1CD2985A542F",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "98c428a9-e7d8-505e-28a4-ce57b7db7bff++505" : "Swift-Demo\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "Swifter Demo",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "Swifter Demo.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "https:\/\/github.com\/dcwy1130\/Swift-Demo",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Subversion",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "98c428a9-e7d8-505e-28a4-ce57b7db7bff++505"
+    }
+  ]
+}

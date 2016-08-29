@@ -2,7 +2,7 @@
 //  AppDelegate.swift
 //  Swifter Demo
 //
-//  Created by Mac on 16/7/12.
+//  Created by ZDX on 16/7/12.
 //  Copyright (c) 2016年 GroupFly. All rights reserved.
 //
 
@@ -20,12 +20,16 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         UINavigationBar.appearance().titleTextAttributes = [NSForegroundColorAttributeName : UIColor.whiteColor() , NSFontAttributeName : UIFont.boldSystemFontOfSize(18)]    // title标题颜色和字体
         UIApplication.sharedApplication().statusBarStyle = UIStatusBarStyle.LightContent
         
+/*************************************************************************************************************************************/
+        // Demo Begin
         let APView = ZDXAdvertisementPageView(frame: self.window!.frame, SkipControlAlignment: .RightTop, SkipControlStyle: .Annular, Duration: 5, ImageURL: NSURL(string: "http://huidiantong.groupfly.cn/ImgUpload/Main/2016_08/201608170325397.png")!, addToView: self.window!.rootViewController!.view)
         // 设置点击广告图片代理
         APView.delegate = {
             let msg = $0 == 0 ? "跳过" : "广告页"
             print("点击了\(msg)")
         }
+        // Demo End
+/*************************************************************************************************************************************/
         return true
     }
 

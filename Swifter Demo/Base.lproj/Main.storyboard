@@ -62,18 +62,37 @@
                                         <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
                                         <nil key="highlightedColor"/>
                                     </label>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Lab" textAlignment="natural" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="UOl-w5-jww">
+                                        <rect key="frame" x="0.0" y="242" width="29" height="21"/>
+                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                        <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
+                                        <nil key="highlightedColor"/>
+                                    </label>
+                                    <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" horizontalCompressionResistancePriority="749" text="LabelLabLabelLabelLLabelLabelLLabelLabelLLabelLabelLelLabelLabelLabel" textAlignment="right" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="4y9-0a-jlC">
+                                        <rect key="frame" x="39" y="242" width="281" height="21"/>
+                                        <constraints>
+                                            <constraint firstAttribute="width" relation="lessThanOrEqual" constant="100" id="rMZ-Ul-X5H"/>
+                                        </constraints>
+                                        <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                        <color key="textColor" cocoaTouchSystemColor="darkTextColor"/>
+                                        <nil key="highlightedColor"/>
+                                        <variation key="default">
+                                            <mask key="constraints">
+                                                <exclude reference="rMZ-Ul-X5H"/>
+                                            </mask>
+                                        </variation>
+                                    </label>
                                 </subviews>
                                 <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                                 <constraints>
+                                    <constraint firstItem="UOl-w5-jww" firstAttribute="leading" secondItem="ENt-DU-CrQ" secondAttribute="leading" id="0um-1D-0jf"/>
                                     <constraint firstItem="XVf-KP-qi5" firstAttribute="top" secondItem="ENt-DU-CrQ" secondAttribute="top" constant="44" id="HdP-NU-fhX"/>
-                                    <constraint firstItem="XVf-KP-qi5" firstAttribute="centerY" secondItem="ENt-DU-CrQ" secondAttribute="centerY" id="VXx-MN-z3G"/>
+                                    <constraint firstAttribute="trailing" secondItem="4y9-0a-jlC" secondAttribute="trailing" id="QJj-rM-rW4"/>
+                                    <constraint firstItem="4y9-0a-jlC" firstAttribute="centerY" secondItem="UOl-w5-jww" secondAttribute="centerY" id="cqK-QI-yTt"/>
                                     <constraint firstItem="XVf-KP-qi5" firstAttribute="centerX" secondItem="ENt-DU-CrQ" secondAttribute="centerX" id="foK-4H-6Gq"/>
+                                    <constraint firstItem="UOl-w5-jww" firstAttribute="centerY" secondItem="ENt-DU-CrQ" secondAttribute="centerY" id="oxy-1T-C6U"/>
+                                    <constraint firstItem="4y9-0a-jlC" firstAttribute="leading" secondItem="UOl-w5-jww" secondAttribute="trailing" constant="10" id="y7s-6G-w9I"/>
                                 </constraints>
-                                <variation key="default">
-                                    <mask key="constraints">
-                                        <exclude reference="VXx-MN-z3G"/>
-                                    </mask>
-                                </variation>
                             </view>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="calibratedWhite"/>

@@ -166,6 +166,10 @@ final public class ZDXMoveView: UIView {
         addSubview(self.sepratorView)
         self.topCollectionView.addSubview(self.moveView)
     }
+    
+    deinit {
+        print("\(NSStringFromClass(ZDXMoveView.self))销毁了")
+    }
 
     required public init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
@@ -174,15 +178,17 @@ final public class ZDXMoveView: UIView {
     public override func drawRect(rect: CGRect) {
         // View重绘时调用，更新UI布局
         initWithFrame(rect)
-        self.contentScrollView.contentSize = CGSizeMake(self.viewWidth * CGFloat(self.titles.count), self.viewHeight - TITLE_HEIGHT)
+        self.contentScrollView.contentSize = CGSizeMake(viewWidth * CGFloat(titles.count), viewHeight - TITLE_HEIGHT)
         // Frame修改后，Cell的Size也改变了，因为需要刷新布局
-        self.topCollectionView.setCollectionViewLayout(self.layout, animated: true)
+        self.topCollectionView.setCollectionViewLayout(self.layout, animated: false)
         // 更新滑块位置 - 修复App挂起后唤醒问题
         self.moveView.frame.size.width = self.titleTextWidth[currentIndex]
-        if let cell = self.topCollectionView.cellForItemAtIndexPath(NSIndexPath(forItem: currentIndex, inSection: 0)) {
-            self.moveView.center.x = cell.center.x
-        } else {
+        if (currentIndex == 0) {
             self.moveView.center.x = self.titleWidth / 2
+        } else {
+            if let cell = self.topCollectionView.cellForItemAtIndexPath(NSIndexPath(forItem: currentIndex, inSection: 0)) {
+                self.moveView.center.x = cell.center.x
+            }
         }
 //        print(NSStringFromCGRect(rect), terminator: "\n")
     }
@@ -313,92 +319,291 @@ public enum PageControlAlignment : Int {
     case Right
 }
 
-public protocol ZDXLoopScrollViewDataSource: NSObjectProtocol {
+public protocol ZDXLoopScrollViewDataSource: class {
     // 获取要显示的视图
     func loopScrollView(loopScrollView: ZDXLoopScrollView, contentViewAtIndex index: Int) -> UIView
     // 获取内容视图的个数
     func numberOfContentViewsInLoopScrollView(loopScrollView: ZDXLoopScrollView) -> Int
 }
 
-public protocol ZDXLoopScrollViewDelegate: NSObjectProtocol {
+@objc public protocol ZDXLoopScrollViewDelegate: NSObjectProtocol {
+
     // 点击某个内容视图的代理
-    func loopScrollView(loopScrollView: ZDXLoopScrollView, didSelectContentViewAtIndex index: Int)
+    optional func loopScrollView(loopScrollView: ZDXLoopScrollView, didSelectContentViewAtIndex index: Int)
 }
 
 /// 无限循环滚动视图
 final public class ZDXLoopScrollView: UIView {
     /// 选中时的颜色
-    var pageIndicatorColor: UIColor = DEFAULT_PAGE_INDICATOR_COLOR
+    var pageIndicatorColor: UIColor = DEFAULT_PAGE_INDICATOR_COLOR {
+        didSet {
+            setNeedsDisplay()
+        }
+    }
     /// 默认时的颜色
-    var currentPageIndicatorColor: UIColor = DEFAULT_CURRENT_PAGE_INDICATOR_COLOR
+    var currentPageIndicatorColor: UIColor = DEFAULT_CURRENT_PAGE_INDICATOR_COLOR {
+        didSet {
+            setNeedsDisplay()
+        }
+    }
+    /// 默认居中对齐
+    var alignment: PageControlAlignment = .Center {
+        didSet {
+            setNeedsDisplay()
+        }
+    }
+    
+    /// 单击手势
+    private var tap: UIGestureRecognizer!
     /// 点击某个的回调
     var callback: MVCallback?
-    
-    weak public var dataSource: ZDXLoopScrollViewDataSource?
     weak public var delegate: ZDXLoopScrollViewDelegate?
-    
-    var alignment: PageControlAlignment = .Center
-    var duration: NSTimeInterval = 3.0
+    weak public var dataSource: ZDXLoopScrollViewDataSource? {
+        didSet {
+            reloadData()
+        }
+    }
+    private var duration: NSTimeInterval = 3.0          // 滚动间隔
+    private var currentPage: Int = 0                    // 当前页数
+    private var totalPage: Int = 0                      // 总页数
+    private var itemViews: [UIView] = []                // 显示的View
+    private var timer: NSTimer?                         // 定时器
     
     /// 容器视图
     lazy private(set) var scrollView: UIScrollView = {
         let scrollView = UIScrollView(frame: self.bounds)
+        scrollView.autoresizingMask = [.FlexibleWidth, .FlexibleHeight]
         scrollView.delegate = self
-
+        scrollView.showsHorizontalScrollIndicator = false
+        scrollView.pagingEnabled = true
+        scrollView.bounces = false
         return scrollView
     }()
     
     /// 分页控制器
-//    lazy private(set) var pageControl: UIPageControl = {
-//        let pageControl = UIPageControl(frame: self.bounds)
-//        pageControl
-//        
-//        return pageControl
-//    }()
+    lazy private(set) var pageControl: UIPageControl = {
+        let pageControl = UIPageControl()
+        pageControl.userInteractionEnabled = false
+        pageControl.backgroundColor = UIColor.clearColor()
+        return pageControl
+    }()
+
     
+    /**
+     默认初始化方法
+     
+     - parameter frame:                   Frame
+     - parameter alignment:               分页指示器排列方式
+     - parameter animationScrollDuration: 循环滚动时长
+     
+     - returns: Self
+     */
     init(frame: CGRect, alignment: PageControlAlignment, animationScrollDuration: NSTimeInterval) {
         self.alignment = alignment
         self.duration = animationScrollDuration
         super.init(frame: frame)
         backgroundColor = UIColor.whiteColor()
-        autoresizingMask = [.FlexibleHeight, .FlexibleWidth]
-        // 获取初始值
-//        initWithFrame(frame)
+        autoresizingMask = [.FlexibleWidth]
         
+        addSubview(self.scrollView)
+        addSubview(self.pageControl)
+        // 添加手势
+        tap = UITapGestureRecognizer(target: self, action: #selector(didSelectedBackground))
+        scrollView.addGestureRecognizer(tap)
+        // 配置界面
+        setupUI()
+    }
+    
+    deinit {
+        print("\(NSStringFromClass(ZDXLoopScrollView.self))销毁了")
     }
     
     required public init?(coder aDecoder: NSCoder) {
         fatalError("init(coder:) has not been implemented")
     }
     
+    // 配置界面
+    private func setupUI() {
+        // 配置ScrollView
+        scrollView.contentSize = CGSizeMake(CGRectGetWidth(bounds) * 3.0, CGRectGetHeight(bounds))
+        scrollView.contentOffset = CGPointMake(CGRectGetWidth(bounds), 0.0)
+        
+        // 配置PageControl
+        let pageControlWidth = pageControl.sizeForNumberOfPages(totalPage).width
+        var frame = CGRectMake(0, CGRectGetMaxY(bounds) - 30.0, pageControlWidth, 30.0)
+        switch alignment {
+        case .Left:
+            frame.origin.x = 20.0
+            break
+        case .Center:
+            frame.origin.x = (CGRectGetWidth(bounds) - pageControlWidth) / 2.0
+            break
+        case .Right:
+            frame.origin.x = CGRectGetWidth(bounds) - pageControlWidth - 20.0;
+            break
+        }
+        pageControl.frame = frame
+    }
     
+    public override func drawRect(rect: CGRect) {
+        setupUI()
+        reloadData()
+    }
     
+    /// 刷新数据
+    public func reloadData() {
+        endAutoLoop()
+        totalPage = (dataSource?.numberOfContentViewsInLoopScrollView(self))!
+        if (totalPage <= 0) {
+            // 无页面不展示
+            return;
+        } else if (totalPage == 1) {
+            // 展示页为1时，PageControl不显示，且ScrollView不滚动
+            pageControl.hidden = true
+            scrollView.scrollEnabled = false
+        } else {
+            pageControl.hidden = false
+            scrollView.scrollEnabled = true
+            startAutoLoop()
+        }
+        pageControl.numberOfPages = totalPage
+        // 装载显示的Views
+        setupData()
+    }
+    
+    /// 开始自动滚动
+    public func startAutoLoop() {
+        guard let timer = timer where timer.valid else {
+            // 不满足条件时，创建定时器
+            self.timer = NSTimer.scheduledTimerWithTimeInterval(duration, target: self, selector: #selector(nextPage), userInfo: nil, repeats: true)
+            NSRunLoop.currentRunLoop().addTimer(self.timer!, forMode: NSRunLoopCommonModes)
+            return
+        }
+    }
+    
+    /// 结束自动滚动
+    public func endAutoLoop() {
+        guard let timer = timer where timer.valid else {
+            // 不符合条件时退出
+            return
+        }
+        timer.invalidate()
+        self.timer = nil
+//        if let timer = timer where timer.valid {
+//            self.timer!.invalidate()
+//            self.timer = nil
+//        }
+    }
+    
+    // 配置数据
+    private func setupData() {
+        pageControl.currentPage = currentPage
+        // 移除ScrollView所有子视图
+        scrollView.subviews.forEach { $0.removeFromSuperview() }
+        // 获取DataSource中的当前展示视图
+        itemViews = fetchItemViewsWithCurrentPage(currentPage)
+        // 添加视图到ScrollView
+        addSubviewWithItemViews(itemViews)
+        scrollView.contentOffset = CGPointMake(CGRectGetWidth(self.bounds), 0)
+    }
+    
+    // 根据当前页数，获取当前显示所有视图 -1 0 +1
+    private func fetchItemViewsWithCurrentPage(currentPage: Int) -> [UIView] {
+        let priorPage = currentPage - 1 < 0 ? totalPage - 1 : currentPage - 1   // <0 则为最后一页
+        let nextPage = currentPage + 1 == totalPage ? 0 : currentPage + 1       // 最大则为第一页
+        
+        var itemViews: [UIView] = []
+        itemViews.append((dataSource?.loopScrollView(self, contentViewAtIndex: priorPage))!)
+        itemViews.append((dataSource?.loopScrollView(self, contentViewAtIndex: currentPage))!)
+        itemViews.append((dataSource?.loopScrollView(self, contentViewAtIndex: nextPage))!)
+        return itemViews;
+    }
+    
+    // 将当前显示的所有视图数组添加到ScrollView中
+    private func addSubviewWithItemViews(itemViews: [UIView]) {
+        let frame = bounds
+        var i: Int = 0
+        itemViews.forEach {
+            $0.frame = CGRectOffset(frame, CGRectGetMaxX($0.bounds) * CGFloat(i), 0)
+            scrollView.addSubview($0)
+            i += 1
+        }
+    }
 
-    
-    
-    
-    
-    
-    
-    
-    
-//    // 当duration<=0时，默认不自动滚动
-//    - (id)initWithFrame:(CGRect)frame animationScrollDuration:(NSTimeInterval)duration;
-//    
-//    - (void)reloadData;
-    
-//    /** 开始自动循环滚动 */
-//    - (void)startAutoLoop;
-//    /** 结束自动循环滚动 */
-//    - (void)endAutoLoop;
-//    /** 刷新数据 */
-//    - (void)reloadData;
-    
+    // 翻页
+    @objc private func nextPage() {
+        var offset = scrollView.contentOffset
+        offset.x += CGRectGetWidth(bounds)
+        scrollView.setContentOffset(offset, animated: true)
+    }
+   
+    // 点击图片
+    @objc private func didSelectedBackground() {
+        // 点击代理
+//        print("\(#function)")
+        if let callback = callback {
+            callback(currentPage)
+        }
+       
+//        let isResponse = delegate?.conformsToProtocol(ZDXLoopScrollViewDelegate)    // 判断是否实现协议，并未判断是否实现协议方法
+        let SEL = delegate?.respondsToSelector(#selector(ZDXLoopScrollViewDelegate.loopScrollView(_:didSelectContentViewAtIndex:)))
+        if (SEL != nil) {
+            delegate?.loopScrollView!(self, didSelectContentViewAtIndex: currentPage)
+        }
+    }
 }
 
 // MARK: 代理方法
 extension ZDXLoopScrollView: UIScrollViewDelegate {
+    // 代理方法
+    public func scrollViewDidScroll(scrollView: UIScrollView) {
+        let total = dataSource?.numberOfContentViewsInLoopScrollView(self)
+        if (total == 0) { return }
+        let x = scrollView.contentOffset.x
+        // 前翻
+        if (x <= 0) {
+            currentPage = currentPage - 1 < 0 ? totalPage - 1 : currentPage - 1
+            setupData()
+        }
+        // 后翻
+        if (x >= CGRectGetWidth(scrollView.bounds) * 2.0) {
+            currentPage = currentPage + 1 == totalPage ? 0 : currentPage + 1
+            setupData()
+        }
+    }
     
+    // 开始拖拽
+    public func scrollViewWillBeginDragging(scrollView: UIScrollView) {
+        endAutoLoop()
+    }
+    
+    // 结束拖拽
+    public func scrollViewDidEndDragging(scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        startAutoLoop()
+    }
+
+    // 结束滚动动画(代码滚动)
+    public func scrollViewDidEndScrollingAnimation(scrollView: UIScrollView) {
+        let x = scrollView.contentOffset.x
+        let width = CGRectGetWidth(scrollView.bounds)
+        var toX: CGFloat = 0.0
+        
+        if x > 0 {
+            toX = width
+        } else if x > width {
+            toX = width * 2.0
+        } else if x > width * 2 {
+            toX = width * 3
+        }
+        
+        if toX > 0.0 {
+            scrollView.contentOffset = CGPointMake(toX, 0)
+        }
+    }
+    
+    public func scrollViewDidEndDecelerating(scrollView: UIScrollView) {
+        
+    }
 }
 
 
@@ -408,8 +613,8 @@ extension NSTimer {
      *  暂停
      */
     func pause() {
-        if (self.valid) {
-            self.fireDate = NSDate.distantFuture()
+        if (valid) {
+            fireDate = NSDate.distantFuture()
         }
     }
     
@@ -417,8 +622,8 @@ extension NSTimer {
      *  重启
      */
     func restart() {
-        if (self.valid) {
-            self.fireDate = NSDate()
+        if (valid) {
+            fireDate = NSDate()
         }
     }
     
@@ -426,8 +631,8 @@ extension NSTimer {
      *  延迟启动
      */
     func restartAfterTimeInterval(interval: NSTimeInterval) {
-        if (self.valid) {
-            self.fireDate = NSDate(timeIntervalSinceReferenceDate: interval)
+        if (valid) {
+            fireDate = NSDate(timeIntervalSinceReferenceDate: interval)
         }
     }
 }
@@ -503,13 +708,13 @@ final public class ZDXAdvertisementPageView: UIView {
         super.init(frame: frame)
         backgroundColor = UIColor.whiteColor()
         if (self.style == .CountDown) {
-            self.timer = NSTimer.scheduledTimerWithTimeInterval(1.0, target: self, selector: #selector(countDown), userInfo: nil, repeats: true)
+            timer = NSTimer.scheduledTimerWithTimeInterval(1.0, target: self, selector: #selector(countDown), userInfo: nil, repeats: true)
         } else {
-            self.timer = NSTimer.scheduledTimerWithTimeInterval(Double(self.duration) / 100.0, target: self, selector: #selector(countDown), userInfo: nil, repeats: true)
+            timer = NSTimer.scheduledTimerWithTimeInterval(Double(self.duration) / 100.0, target: self, selector: #selector(countDown), userInfo: nil, repeats: true)
             self.duration = 100
         }
-        NSRunLoop.currentRunLoop().addTimer(self.timer, forMode: NSRunLoopCommonModes)
-        self.timer.pause()
+        NSRunLoop.currentRunLoop().addTimer(timer, forMode: NSRunLoopCommonModes)
+        timer.pause()
         // 配置界面
         setupUI()
         aView.addSubview(self)
@@ -524,25 +729,28 @@ final public class ZDXAdvertisementPageView: UIView {
     }
     
     func setupUI() {
-        let frame = self.frame
+        let frame = bounds
         // 广告图片视图
-        self.imageView = UIImageView(frame: frame)
-        addSubview(self.imageView)
+        imageView = UIImageView(frame: frame)
+        addSubview(imageView)
         // 点击广告图片的Button
         let backgroundBtn = UIButton(frame: frame)
         backgroundBtn.tag = 1
         backgroundBtn.addTarget(self, action: #selector(choose), forControlEvents: .TouchUpInside)
         addSubview(backgroundBtn)
-        // 设置广告图片
+        // 设置广告图片，保证始终有图片显示，不然会短暂出现空白页
+        if let image = imageWithCache() {
+            imageView.image = image
+        }
         setupImageView()
         
         // 跳转视图
         var skipViewFrame: CGRect = CGRectZero
-        let skipViewSize: CGSize = self.style == .CountDown ? COUNTDOWN_SIZE : ANNULAR_SIZE
+        let skipViewSize: CGSize = style == .CountDown ? COUNTDOWN_SIZE : ANNULAR_SIZE
         var skipViewOrigin: CGPoint = CGPointZero
         let spacing: CGFloat = 10.0
         let statusBarHeight: CGFloat = 20.0
-        switch self.alignment {
+        switch alignment {
             case .LeftTop:
                 skipViewOrigin.x = spacing
                 skipViewOrigin.y = spacing + statusBarHeight
@@ -562,16 +770,16 @@ final public class ZDXAdvertisementPageView: UIView {
         }
         skipViewFrame.size = skipViewSize
         skipViewFrame.origin = skipViewOrigin
-        self.skipView = UIView(frame: skipViewFrame)
-        addSubview(self.skipView)
+        skipView = UIView(frame: skipViewFrame)
+        addSubview(skipView)
         // 设置跳转视图内容
         setupSkipView()
     }
     
-    // 设置广告图片内容
+    // 设置广告图片内容，最好设计一张图片放在本地，以供无网络时可以看到广告图
     private func setupImageView() {
         // 1.将网络图片下载下来
-        let request: NSURLRequest = NSURLRequest(URL: self.imageURL)
+        let request: NSURLRequest = NSURLRequest(URL: imageURL)
         let session: NSURLSession = NSURLSession.sharedSession()
         
         let task = session.dataTaskWithRequest(request) { (data, response, error) in
@@ -606,7 +814,7 @@ final public class ZDXAdvertisementPageView: UIView {
             dispatch_async(dispatch_get_main_queue(), {
                 if let APImage = image {
                     // 3.设置图片
-                    self.imageView.image = APImage;
+                    self.imageView.image = APImage
                     self.timer.restart()
                 } else {
                     self.dismiss()
@@ -619,7 +827,7 @@ final public class ZDXAdvertisementPageView: UIView {
     // 获取缓存数据
     private func imageWithCache() -> UIImage? {
         var image: UIImage? = nil
-        if let imageData = NSData(contentsOfFile: self.cachePath) {
+        if let imageData = NSData(contentsOfFile: cachePath) {
             image = UIImage(data: imageData)
         }
         return image
@@ -628,7 +836,7 @@ final public class ZDXAdvertisementPageView: UIView {
     // 设置跳转视图内容
     private func setupSkipView() {
         // 背景图
-        self.skipView.backgroundColor = UIColor ( red: 0.0, green: 0.0, blue: 0.0, alpha: 0.6 )
+        self.skipView.backgroundColor = UIColor ( red: 0.0, green: 0.0, blue: 0.0, alpha: 0.7 )
         self.skipView.layer.cornerRadius = CGRectGetHeight(self.skipView.frame) / 2.0
         self.skipView.layer.masksToBounds = true
         
@@ -707,6 +915,7 @@ final public class ZDXAdvertisementPageView: UIView {
         
         override init(frame: CGRect) {
             super.init(frame: frame)
+            backgroundColor = UIColor.clearColor()
             userInteractionEnabled = false
         }
         
@@ -724,6 +933,15 @@ final public class ZDXAdvertisementPageView: UIView {
             // 清除绘图
             let context = UIGraphicsGetCurrentContext()
             CGContextClearRect(context, rect)
+            
+//            // 背景
+//            // 传的是正方形，因此就可以绘制出圆了
+//            let path = UIBezierPath(roundedRect: rect, cornerRadius: CGRectGetWidth(self.bounds) / 2)
+//            let fillColor = UIColor.blackColor()
+//            fillColor.set()
+//            path.fill()
+//            path.stroke()
+            
             let lineWidth: CGFloat = 2.0
             let center = CGPointMake(CGRectGetMidX(rect), CGRectGetMidY(rect))
             let radius = (CGRectGetWidth(self.bounds) - lineWidth) / 2
