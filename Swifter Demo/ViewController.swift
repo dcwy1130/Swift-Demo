@@ -202,7 +202,7 @@ class ViewController: UIViewController, ZDXLoopScrollViewDataSource, ZDXLoopScro
 //        moveView = ZDXMoveView(frame: self.contentView.bounds, titles: ["全部", "待付款", "待发货", "待收货", "待评价", "退款/售后"], contentViews:views)
         moveView = ZDXMoveView(frame: CGRectMake(0, 0, CGRectGetWidth(self.contentView.bounds), 44), titles: ["全部", "待付款", "待发货", "待收货", "待评价", "退款/售后"])
 //        print(NSStringFromCGRect(moveView.bounds), terminator: "")
-//        self.contentView.addSubview(moveView)
+        self.contentView.addSubview(moveView)
         moveView.delegate = { [weak self] (index: Int) in
             print("点了第\(index)个")
             // 弱引用
@@ -217,7 +217,7 @@ class ViewController: UIViewController, ZDXLoopScrollViewDataSource, ZDXLoopScro
         loopScrollView.callback = {
             print("点了第\($0)个")
         }
-        self.contentView.addSubview(loopScrollView)
+//        self.contentView.addSubview(loopScrollView)
     }
     
     func numberOfContentViewsInLoopScrollView(loopScrollView: ZDXLoopScrollView) -> Int {
