@@ -225,12 +225,20 @@ final public class ZDXMoveView: UIView {
      */
     func moveToIndex(index: Int) {
         if (currentIndex != index) {
+            self.topCollectionView.selectItemAtIndexPath(NSIndexPath(forRow: Int(index), inSection: 0), animated: true, scrollPosition: .CenteredHorizontally)
+            
             let indexPath: NSIndexPath = NSIndexPath(forRow: index, inSection: 0)
             if (self.topCollectionView.cellForItemAtIndexPath(indexPath) != nil) {
-                moveToIndexPath(indexPath)
+                self.moveToIndexPath(indexPath)
+            } else {
+                // 延迟执行
+                let delayTime = dispatch_time(DISPATCH_TIME_NOW, Int64(0.1 * Double(NSEC_PER_SEC)))
+                dispatch_after(delayTime, dispatch_get_main_queue(), {
+                    self.moveToIndexPath(indexPath)
+                })
             }
             self.delegate?(index)
-            currentIndex = index
+            self.currentIndex = index
         }
     }
     
@@ -932,7 +940,7 @@ final public class ZDXAdvertisementPageView: UIView {
         override func drawRect(rect: CGRect) {
             // 清除绘图
             let context = UIGraphicsGetCurrentContext()
-            CGContextClearRect(context, rect)
+            CGContextClearRect(context!, rect)
             
 //            // 背景
 //            // 传的是正方形，因此就可以绘制出圆了
