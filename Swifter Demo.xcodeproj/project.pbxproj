@@ -188,9 +188,11 @@
 					0C71CB881D34BF5900731968 = {
 						CreatedOnToolsVersion = 6.3.2;
 						DevelopmentTeam = LKE449VVE5;
+						LastSwiftMigration = 0800;
 					};
 					0C71CB9D1D34BF5900731968 = {
 						CreatedOnToolsVersion = 6.3.2;
+						LastSwiftMigration = 0800;
 						TestTargetID = 0C71CB881D34BF5900731968;
 					};
 				};
@@ -423,6 +425,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "GF.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 2.3;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Swifter Demo.app/Swifter Demo";
 			};
 			name = Debug;
@@ -439,6 +442,7 @@
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @loader_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = "GF.$(PRODUCT_NAME:rfc1034identifier)";
 				PRODUCT_NAME = "$(TARGET_NAME)";
+				SWIFT_VERSION = 2.3;
 				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Swifter Demo.app/Swifter Demo";
 			};
 			name = Release;

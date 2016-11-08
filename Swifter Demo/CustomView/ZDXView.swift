@@ -422,6 +422,30 @@ final public class ZDXLoopScrollView: UIView {
         setupUI()
     }
     
+    /**
+     默认初始化方法
+     
+     - parameter frame:                   Frame
+     - parameter animationScrollDuration: 循环滚动时长
+     
+     - returns: Self
+     */
+    init(frame: CGRect, animationScrollDuration: NSTimeInterval) {
+        self.alignment = .Center
+        self.duration = animationScrollDuration
+        super.init(frame: frame)
+        backgroundColor = UIColor.whiteColor()
+        autoresizingMask = [.FlexibleWidth]
+        
+        addSubview(self.scrollView)
+        addSubview(self.pageControl)
+        // 添加手势
+        tap = UITapGestureRecognizer(target: self, action: #selector(didSelectedBackground))
+        scrollView.addGestureRecognizer(tap)
+        // 配置界面
+        setupUI()
+    }
+    
     deinit {
         print("\(NSStringFromClass(ZDXLoopScrollView.self))销毁了")
     }
@@ -487,6 +511,7 @@ final public class ZDXLoopScrollView: UIView {
             NSRunLoop.currentRunLoop().addTimer(self.timer!, forMode: NSRunLoopCommonModes)
             return
         }
+        reloadData()
     }
     
     /// 结束自动滚动
@@ -681,12 +706,20 @@ final public class ZDXAdvertisementPageView: UIView {
     private var alignment: SkipControlAlignment
     private var style: SkipControlStyle
     private var duration: Int
-    private var imageURL: NSURL
+    public var imageURL: NSURL! {
+        didSet {
+            // 设置图片URL后下载图片
+            fetchImageURL()
+        }
+    }
     
     private var imageView: UIImageView!                 // 背景广告图片
+    private var ADLabel:UILabel!                        // 广告字样
     private var skipView: UIView!                       // 跳过视图
+    private var isCanClick: Bool                        // 是否可以点击背景
     private var countDownLabel: UILabel?                // 倒计时
     private var timer: NSTimer!                         // 定时器
+    private var placeholderImage: UIImage               // 占位图
     private var progressView: ZDXRoundProgressView?     // 环形进度视图
     /// 广告图片缓存路径
     lazy private(set) var cachePath: String = {
@@ -698,18 +731,36 @@ final public class ZDXAdvertisementPageView: UIView {
     }()
     var delegate: APVCallback?                          // 点击回调  0是视图消失   1是广告页
     
-    init(frame: CGRect, SkipControlAlignment alignment: SkipControlAlignment, SkipControlStyle style: SkipControlStyle, Duration duration: Int, ImageURL imageURL: NSURL, addToView aView: UIView) {
-        // 检查ImageURL是否有效
-//        var error: NSError?
-//        // 只能用于检查本地文件路径
-//        if !imageURL.checkResourceIsReachableAndReturnError(&error) {
-//            print("Error: \(error)")
-//            return nil
-//        }
+    init(frame: CGRect, SkipControlAlignment alignment: SkipControlAlignment, SkipControlStyle style: SkipControlStyle, Duration duration: Int, placeholderImage: UIImage, addToView aView: UIView) {
         self.alignment = alignment
         self.style = style
-        self.imageURL = imageURL
         self.duration = duration
+        self.placeholderImage = placeholderImage
+        self.isCanClick = false
+        if (duration <= 0 ) {
+            self.duration = DEFAULT_DURATION
+        }
+        super.init(frame: frame)
+        backgroundColor = UIColor.whiteColor()
+        if (self.style == .CountDown) {
+            timer = NSTimer.scheduledTimerWithTimeInterval(1.0, target: self, selector: #selector(countDown), userInfo: nil, repeats: true)
+        } else {
+            timer = NSTimer.scheduledTimerWithTimeInterval(Double(self.duration) / 100.0, target: self, selector: #selector(countDown), userInfo: nil, repeats: true)
+            self.duration = 100
+        }
+        NSRunLoop.currentRunLoop().addTimer(timer, forMode: NSRunLoopCommonModes)
+        timer.pause()
+        // 配置界面
+        setupUI()
+        aView.addSubview(self)
+    }
+    
+    init(frame: CGRect, Duration duration: Int, placeholderImage: UIImage, addToView aView: UIView) {
+        self.alignment = .RightTop
+        self.style = .Annular
+        self.duration = duration
+        self.placeholderImage = placeholderImage
+        self.isCanClick = false
         if (duration <= 0 ) {
             self.duration = DEFAULT_DURATION
         }
@@ -733,24 +784,21 @@ final public class ZDXAdvertisementPageView: UIView {
     }
     
     deinit {
-        print("\(NSStringFromClass(ZDXAdvertisementPageView.self))销毁了")
+        // print("\(NSStringFromClass(ZDXAdvertisementPageView.self))销毁了")
     }
     
-    func setupUI() {
+    private func setupUI() {
+        UIApplication.sharedApplication().statusBarHidden = true
         let frame = bounds
         // 广告图片视图
         imageView = UIImageView(frame: frame)
+        imageView.image = placeholderImage
         addSubview(imageView)
         // 点击广告图片的Button
         let backgroundBtn = UIButton(frame: frame)
         backgroundBtn.tag = 1
         backgroundBtn.addTarget(self, action: #selector(choose), forControlEvents: .TouchUpInside)
         addSubview(backgroundBtn)
-        // 设置广告图片，保证始终有图片显示，不然会短暂出现空白页
-        if let image = imageWithCache() {
-            imageView.image = image
-        }
-        setupImageView()
         
         // 跳转视图
         var skipViewFrame: CGRect = CGRectZero
@@ -759,42 +807,84 @@ final public class ZDXAdvertisementPageView: UIView {
         let spacing: CGFloat = 10.0
         let statusBarHeight: CGFloat = 20.0
         switch alignment {
-            case .LeftTop:
-                skipViewOrigin.x = spacing
-                skipViewOrigin.y = spacing + statusBarHeight
-                break
-            case .RightTop:
-                skipViewOrigin.x = CGRectGetWidth(frame) - skipViewSize.width - spacing
-                skipViewOrigin.y = spacing + statusBarHeight
-                break
-            case .LeftBottom:
-                skipViewOrigin.x = spacing
-                skipViewOrigin.y = CGRectGetHeight(frame) - skipViewSize.height - spacing
-                break
-            case .RightBottom:
-                skipViewOrigin.x = CGRectGetWidth(frame) - skipViewSize.width - spacing
-                skipViewOrigin.y = CGRectGetHeight(frame) - skipViewSize.height - spacing
-                break
+        case .LeftTop:
+            skipViewOrigin.x = spacing
+            skipViewOrigin.y = spacing + statusBarHeight
+            break
+        case .RightTop:
+            skipViewOrigin.x = CGRectGetWidth(frame) - skipViewSize.width - spacing
+            skipViewOrigin.y = spacing + statusBarHeight
+            break
+        case .LeftBottom:
+            skipViewOrigin.x = spacing
+            skipViewOrigin.y = CGRectGetHeight(frame) - skipViewSize.height - spacing
+            break
+        case .RightBottom:
+            skipViewOrigin.x = CGRectGetWidth(frame) - skipViewSize.width - spacing
+            skipViewOrigin.y = CGRectGetHeight(frame) - skipViewSize.height - spacing
+            break
         }
         skipViewFrame.size = skipViewSize
         skipViewFrame.origin = skipViewOrigin
         skipView = UIView(frame: skipViewFrame)
+        skipView.hidden = true
         addSubview(skipView)
         // 设置跳转视图内容
         setupSkipView()
+        
+        // 广告字样文本
+        ADLabel = UILabel(frame: CGRectMake(10, 10, 40, 20))
+        ADLabel.text = "广告"
+        ADLabel.font = UIFont.boldSystemFontOfSize(12.0)
+        ADLabel.textColor = UIColor.whiteColor()
+        ADLabel.textAlignment = .Center;
+        ADLabel.backgroundColor = UIColor.darkGrayColor()
+        ADLabel.alpha = 0.8
+        ADLabel.layer.cornerRadius = 2.0
+        ADLabel.layer.masksToBounds = true
+        ADLabel.hidden = true
+        addSubview(ADLabel)
     }
     
-    // 设置广告图片内容，最好设计一张图片放在本地，以供无网络时可以看到广告图
-    private func setupImageView() {
+    // 读取缓存数据
+    public func readCacheData() {
+        setupImageView(imageWithCache())
+    }
+    
+    // 获取广告图片并缓存
+    private func fetchImageURL() {
+        // 缓存图片，并通过block将图片回调
+        cacheData(imageURL) { self.setupImageView($0) }
+    }
+    
+    // 设置广告图片
+    private func setupImageView(image: UIImage?) {
+        dispatch_async(dispatch_get_main_queue(), {
+            if let APImage = image {
+                // 3.设置图片
+                self.ADLabel.hidden = false
+                self.skipView.hidden = false
+                self.imageView.image = APImage
+                self.isCanClick = true
+                self.timer.restart()
+            } else {
+                // self.dismiss()
+                UIApplication.sharedApplication().statusBarHidden = false
+                self.removeFromSuperview()
+            }
+        })
+    }
+    
+    public func cacheData(URL: NSURL, completion: ((image: UIImage? ) -> ())?){
         // 1.将网络图片下载下来
-        let request: NSURLRequest = NSURLRequest(URL: imageURL)
+        let request: NSURLRequest = NSURLRequest(URL: URL)
         let session: NSURLSession = NSURLSession.sharedSession()
         
         let task = session.dataTaskWithRequest(request) { (data, response, error) in
-            var image: UIImage? = nil
+            var image: UIImage? = self.imageWithCache()
             if (error != nil) {
                 // 2.1 网络异常，从缓存里读取
-                image = self.imageWithCache()
+                // image = self.imageWithCache()
             } else {
                 // 2.2.1 网络正常，读取返回数据
                 if let JSONData = data {
@@ -802,32 +892,24 @@ final public class ZDXAdvertisementPageView: UIView {
                     if let imageTemp = UIImage(data: JSONData) {
                         image = imageTemp
                         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), {
-//                            print("Path: \(self.cachePath)")
                             if (JSONData.writeToFile(self.cachePath, atomically: true)) {
-                                print("Cache Success")
+                                // print("Cache Success")
                             } else {
-                                print("Cache Failure")
+                                // print("Cache Failure")
                             }
                         })
                     } else {
-                        // 2.2.1.1 返回数据不为图片，读取缓存数据
-                        image = self.imageWithCache()
+                        // 2.2.1.2 返回数据不为图片，读取缓存数据
+                        // image = self.imageWithCache()
                     }
                 } else {
                     //2.2.2 网络正常，无返回数据，读取缓存数据
-                    image = self.imageWithCache()
+                    // image = self.imageWithCache()
                 }
             }
-            
-            dispatch_async(dispatch_get_main_queue(), {
-                if let APImage = image {
-                    // 3.设置图片
-                    self.imageView.image = APImage
-                    self.timer.restart()
-                } else {
-                    self.dismiss()
-                }
-            })
+            if let completion = completion {
+                completion(image: image)
+            }
         }
         task.resume()
     }
@@ -870,7 +952,7 @@ final public class ZDXAdvertisementPageView: UIView {
             // 倒计时
             self.countDownLabel = UILabel(frame: countDownRect)
             self.countDownLabel!.text = "\(self.duration)"
-//            self.countDownLabel!.textAlignment = .Center
+            //            self.countDownLabel!.textAlignment = .Center
             self.countDownLabel!.textColor = UIColor.orangeColor()
             self.countDownLabel!.font = UIFont.boldSystemFontOfSize(13.0)
             self.skipView.addSubview(self.countDownLabel!)
@@ -900,21 +982,24 @@ final public class ZDXAdvertisementPageView: UIView {
     
     // 选择按钮
     @objc private func choose(btn: UIButton) {
-        if (self.delegate != nil) {
-            self.delegate!(btn.tag) // 0 跳过 1 广告页
+        if isCanClick {
+            if (delegate != nil) {
+                delegate!(btn.tag) // 0 跳过 1 广告页
+            }
+            dismiss()
         }
-        self.dismiss()
     }
     
     // 消失动画
-    @objc private func dismiss() {
+    @objc public func dismiss() {
         if (self.timer.valid) {
             self.timer.invalidate()
             self.timer = nil
         }
+        UIApplication.sharedApplication().statusBarHidden = false
         UIView.animateWithDuration(0.8, delay:0, options:.CurveLinear, animations: {
-                self.layer.opacity = 0.0
-                self.transform = CGAffineTransformMakeScale(1.3, 1.3) })
+            self.layer.opacity = 0.0
+            self.transform = CGAffineTransformMakeScale(1.3, 1.3) })
         { (finished) in self.removeFromSuperview() }
     }
     
@@ -942,13 +1027,13 @@ final public class ZDXAdvertisementPageView: UIView {
             let context = UIGraphicsGetCurrentContext()
             CGContextClearRect(context!, rect)
             
-//            // 背景
-//            // 传的是正方形，因此就可以绘制出圆了
-//            let path = UIBezierPath(roundedRect: rect, cornerRadius: CGRectGetWidth(self.bounds) / 2)
-//            let fillColor = UIColor.blackColor()
-//            fillColor.set()
-//            path.fill()
-//            path.stroke()
+            //            // 背景
+            //            // 传的是正方形，因此就可以绘制出圆了
+            //            let path = UIBezierPath(roundedRect: rect, cornerRadius: CGRectGetWidth(self.bounds) / 2)
+            //            let fillColor = UIColor.blackColor()
+            //            fillColor.set()
+            //            path.fill()
+            //            path.stroke()
             
             let lineWidth: CGFloat = 2.0
             let center = CGPointMake(CGRectGetMidX(rect), CGRectGetMidY(rect))

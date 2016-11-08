@@ -22,12 +22,21 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
         
 /*************************************************************************************************************************************/
         // Demo Begin
-        let APView = ZDXAdvertisementPageView(frame: self.window!.frame, SkipControlAlignment: .RightTop, SkipControlStyle: .Annular, Duration: 5, ImageURL: NSURL(string: "http://huidiantong.groupfly.cn/ImgUpload/Main/2016_08/201608170325397.png")!, addToView: self.window!.rootViewController!.view)
+        
+        // placeholderImage 建议用当前屏幕尺寸的启动图
+        let APView = ZDXAdvertisementPageView(frame: self.window!.frame, SkipControlAlignment: .RightTop, SkipControlStyle: .Annular, Duration: 4, placeholderImage: UIImage(named: "app_guide_667_3")!, addToView: self.window!.rootViewController!.view)
         // 设置点击广告图片代理
         APView.delegate = {
             let msg = $0 == 0 ? "跳过" : "广告页"
             print("点击了\(msg)")
         }
+        // 模拟网络请求
+        let delayTime = dispatch_time(DISPATCH_TIME_NOW, Int64(3.0 * Double(NSEC_PER_SEC)))
+        dispatch_after(delayTime, dispatch_get_main_queue(), {
+            // 设置网络请求后的广告图片
+            APView.imageURL = NSURL(string: "http://huidiantong.groupfly.cn/ImgUpload/Main/2016_08/201608170325397.png")!
+        })
+
         // Demo End
 /*************************************************************************************************************************************/
         return true
