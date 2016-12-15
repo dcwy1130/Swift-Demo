@@ -9,27 +9,30 @@
 import UIKit
 import CoreData
 
-class ViewController: UIViewController, ZDXLoopScrollViewDataSource, ZDXLoopScrollViewDelegate {
+class ViewController: UIViewController, ZDXLoopScrollViewDataSource, ZDXLoopScrollViewDelegate, ZDXPopupViewDataSource {
     var titleLabel: UILabel!
     var moveView: ZDXMoveView!
     var loopScrollView: ZDXLoopScrollView!
+    var popupView: ZDXPopupView!
     var imageNames: [String] = ["2", "3", "4", "5", "6"]
     @IBOutlet weak var tableView: UITableView!
     @IBOutlet weak var contentView: UIView!
     @IBOutlet weak var label: UILabel!
     
     
-    override func viewDidDisappear(animated: Bool) {
+    override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
         // 销毁
-        loopScrollView.endAutoLoop()
+        if loopScrollView != nil {
+            loopScrollView.endAutoLoop()
+        }
     }
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        let childVCs = (1..<6).map {  UIStoryboard(name: "Main", bundle: nil).instantiateViewControllerWithIdentifier("ViewController" + "\($0)") }
+        let childVCs = (1..<6).map {  UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "ViewController" + "\($0)") }
         childVCs.forEach(self.addChildViewController)
-        1.stride(to: 9, by: 2)
+        stride(from: 1, to: 9, by: 2)
         
 //        test1()
 //        test2()
@@ -40,14 +43,15 @@ class ViewController: UIViewController, ZDXLoopScrollViewDataSource, ZDXLoopScro
 //        test7()
 //        test8()
 //        test9()
-        test10()
+//        test10()
 //        test11()
 //        test12()
 //        test13()
+        test14()
         
         titleLabel = {
-            let label = UILabel(frame: CGRectMake(150, 30, 60, 40))
-            label.textColor = UIColor.redColor()
+            let label = UILabel(frame: CGRect(x: 150, y: 30, width: 60, height: 40))
+            label.textColor = UIColor.red
             label.text = "Title"
 //            self.view.addSubview(label)
             return label
@@ -79,22 +83,22 @@ class ViewController: UIViewController, ZDXLoopScrollViewDataSource, ZDXLoopScro
         for object in self.view.subviews {
             // as? 在类型不匹配及转换失败时返回 nil
             if let view = object as? UIView {
-                view.backgroundColor = UIColor.redColor()
+                view.backgroundColor = UIColor.red
             } else {
-                view.backgroundColor = UIColor.greenColor()
+                view.backgroundColor = UIColor.green
             }
         }
         
         // 2.转换后遍历
         if let subviews = self.view.subviews as? [UIView] {
             for view in subviews {
-                view.backgroundColor = UIColor.yellowColor()
+                view.backgroundColor = UIColor.yellow
             }
         }
         
         // 3.强制转换后遍历（前提是数组元素必须一致）
         for view in self.view.subviews {
-            view.backgroundColor = UIColor.blueColor()
+            view.backgroundColor = UIColor.blue
         }
     }
     
@@ -107,7 +111,7 @@ class ViewController: UIViewController, ZDXLoopScrollViewDataSource, ZDXLoopScro
     func test4() {
         let foo = PropertyCheckClass()
 //        foo.date = foo.date.dateByAddingTimeInterval(10086)
-        foo.date = foo.date.dateByAddingTimeInterval(100_000_000)
+        foo.date = foo.date.addingTimeInterval(100_000_000)
     }
     
     func test5() {
@@ -117,15 +121,15 @@ class ViewController: UIViewController, ZDXLoopScrollViewDataSource, ZDXLoopScro
         cancel(task)
     }
     
-    private var myContext = 0
+    fileprivate var myContext = 0
     
     func test6() {
         myObject = KVOMyClass()
         print("初始化 MyClass，当前日期: \(myObject.date)")
-        myObject.addObserver(self, forKeyPath: "date", options: .New, context: &myContext)
+        myObject.addObserver(self, forKeyPath: "date", options: .new, context: &myContext)
         
         delay(3) {
-            self.myObject.date = NSDate()
+            self.myObject.date = Date()
         }
     }
     
@@ -159,11 +163,11 @@ class ViewController: UIViewController, ZDXLoopScrollViewDataSource, ZDXLoopScro
     // lazy方法
     func test9() {
         
-        let aView: UIView = UIView(frame: CGRectMake(0, 0, 100, 100))
-        aView.backgroundColor = UIColor.redColor()
+        let aView: UIView = UIView(frame: CGRect(x: 0, y: 0, width: 100, height: 100))
+        aView.backgroundColor = UIColor.red
         self.view.addSubview(aView)
         // 延时执行须是类方法
-        [ViewController .performSelector(#selector(ViewController.perform(_:)), withObject: aView, afterDelay: 3.0)]
+        // ViewController.perform(#selector(ViewController.perform(_:)), with: aView, afterDelay: 3.0)
         
         // lazy 延时加载方法
         let data = 1...10
@@ -182,13 +186,13 @@ class ViewController: UIViewController, ZDXLoopScrollViewDataSource, ZDXLoopScro
         // 无穷大
         Double.infinity
         // 未定义或错误运算
-        Double.NaN
+        Double.nan
     }
     
-    class func perform(aView: UIView) -> Void {
-        UIView.animateWithDuration(0.3) {
-            aView.transform = CGAffineTransformTranslate(aView.transform, 100, 100)
-        }
+    class func perform(_ aView: UIView) -> Void {
+        UIView.animate(withDuration: 0.3, animations: {
+            aView.transform = aView.transform.translatedBy(x: 100, y: 100)
+        }) 
     }
     
     
@@ -200,7 +204,7 @@ class ViewController: UIViewController, ZDXLoopScrollViewDataSource, ZDXLoopScro
         }
 //        self.navigationController?.navigationBar.translucent = false
 //        moveView = ZDXMoveView(frame: self.contentView.bounds, titles: ["全部", "待付款", "待发货", "待收货", "待评价", "退款/售后"], contentViews:views)
-        moveView = ZDXMoveView(frame: CGRectMake(0, 0, CGRectGetWidth(self.contentView.bounds), 44), titles: ["全部", "待付款", "待发货", "待收货", "待评价", "退款/售后"])
+        moveView = ZDXMoveView(frame: CGRect(x: 0, y: 0, width: self.contentView.bounds.width, height: 44), titles: ["全部", "待付款", "待发货", "待收货", "待评价", "退款/售后"])
 //        print(NSStringFromCGRect(moveView.bounds), terminator: "")
         moveView.moveToIndex(3)
         self.contentView.addSubview(moveView)
@@ -212,7 +216,7 @@ class ViewController: UIViewController, ZDXLoopScrollViewDataSource, ZDXLoopScro
             }
         }
         
-        loopScrollView = ZDXLoopScrollView(frame: CGRectMake(0, 0, CGRectGetWidth(self.contentView.bounds), 200), alignment: .Center, animationScrollDuration: 3.0)
+        loopScrollView = ZDXLoopScrollView(frame: CGRect(x: 0, y: 0, width: self.contentView.bounds.width, height: 200), alignment: .center, animationScrollDuration: 3.0)
         loopScrollView.dataSource = self
         loopScrollView.delegate = self
         loopScrollView.callback = {
@@ -221,26 +225,26 @@ class ViewController: UIViewController, ZDXLoopScrollViewDataSource, ZDXLoopScro
 //        self.contentView.addSubview(loopScrollView)
     }
     
-    func numberOfContentViewsInLoopScrollView(loopScrollView: ZDXLoopScrollView) -> Int {
+    func numberOfContentViewsInLoopScrollView(_ loopScrollView: ZDXLoopScrollView) -> Int {
         return imageNames.endIndex
     }
     
-    func loopScrollView(loopScrollView: ZDXLoopScrollView, contentViewAtIndex index: Int) -> UIView {
+    func loopScrollView(_ loopScrollView: ZDXLoopScrollView, contentViewAtIndex index: Int) -> UIView {
 //        print("Rect: \(NSStringFromCGRect(loopScrollView.bounds))")
         let imageView = UIImageView(frame: loopScrollView.bounds)
         imageView.image = UIImage(named: imageNames[index])
         return imageView
     }
     
-    func loopScrollView(loopScrollView: ZDXLoopScrollView, didSelectContentViewAtIndex index: Int) {
+    func loopScrollView(_ loopScrollView: ZDXLoopScrollView, didSelectContentViewAtIndex index: Int) {
         print("\(#function) 点了第\(index)个")
     }
     
     func test11() {
         // 接收类型
-        sizeof(Int)
+        MemoryLayout<Int>.size
         // 接收具体的值
-        sizeofValue(Double)
+        MemoryLayout.size(ofValue: Double.self)
         // 辅助函数
         race(state)
         
@@ -256,7 +260,7 @@ class ViewController: UIViewController, ZDXLoopScrollViewDataSource, ZDXLoopScro
         
 //        print(array1)
         print(array2)
-        func myMethods <T> (i: T, j: T) {
+        func myMethods <T> (_ i: T, j: T) {
             
         }
     }
@@ -293,7 +297,7 @@ class ViewController: UIViewController, ZDXLoopScrollViewDataSource, ZDXLoopScro
         // Reduce应用：把一个初始值以及中间值与序列中的元素进行合并的函数进行抽象
         // 例：累加
         let s = fibs.reduce(0) { total, num in total + num }
-        let r = fibs.reduce(1, combine: *)
+        let r = fibs.reduce(1, *)
         print("S:" + "\(s)")
         print("R:" + "\(r)")
         
@@ -318,7 +322,7 @@ class ViewController: UIViewController, ZDXLoopScrollViewDataSource, ZDXLoopScro
         
         let fib = [1, 5, 6, 9, 10]
         // 得到的是数组的一个切片ArraySlice<Int>，数组的一种表示方式
-        let fs = fib[1..<fibs.endIndex]
+        let fs = fib[fibs.indices.suffix(from: 1)]
         // 将切片转换为数组
         let ar = Array(fs)
         print(ar)
@@ -339,6 +343,29 @@ class ViewController: UIViewController, ZDXLoopScrollViewDataSource, ZDXLoopScro
          */
     }
     
+    func test14() {
+        popupView = ZDXPopupView(frame: self.view.bounds, animation: .fadeInOut)
+        popupView.dataSource = self
+    }
+
+    
+    func viewForContentInPopupView(_ popupView: ZDXPopupView) -> UIView {
+        let view: UIView = UIView(frame: CGRect(x: 100, y: 100, width: 100, height: 100))
+        view.backgroundColor = UIColor.orange
+        return view
+    }
+    
+    var count = 0
+    @IBAction func show(_ sender: AnyObject) {
+        if self.count >= 8 {
+            self.count = 0
+        } else {
+            self.count += 1
+        }
+        popupView.animationType = ZDXPopupViewAnimation(rawValue: self.count)!
+        popupView.show()
+    }
+    
     typealias Time = Int
     typealias Positions = [Int]
     typealias State = (time: Time, positions: Positions)
@@ -346,7 +373,7 @@ class ViewController: UIViewController, ZDXLoopScrollViewDataSource, ZDXLoopScro
     let state: State = (time: 5, positions: [1, 1, 1])
     
     // 主函数
-    func race(state: State) {
+    func race(_ state: State) {
         draw(state)
         // 递归调用
         if (state.time > 0) {
@@ -356,30 +383,30 @@ class ViewController: UIViewController, ZDXLoopScrollViewDataSource, ZDXLoopScro
     }
     
     // 输出结果
-    func draw(state: State) {
+    func draw(_ state: State) {
         let outputs = state.positions.map { self.outputCar($0) }
-        print(outputs.joinWithSeparator("\n"), terminator: "")
+        print(outputs.joined(separator: "\n"), terminator: "")
     }
     
     // 传入State, 通过计算后返回新State
-    func runStepOfRace(state: State) -> State {
+    func runStepOfRace(_ state: State) -> State {
         let newTime = state.time - 1
         let newPositions = moveCars(state.positions)
         return (newTime, newPositions)
     }
     
     // 返回n个-字符串
-    func outputCar(carPosition: Int) -> String {
+    func outputCar(_ carPosition: Int) -> String {
         let output = (0..<carPosition).map { _ in "-" }
-        return output.joinWithSeparator("")
+        return output.joined(separator: "")
     }
     
     // 产生随机数，如果该数>3则在原基础+1，否则不加，最后返回新的Position
-    func moveCars(positions: [Int]) -> [Int] {
+    func moveCars(_ positions: [Int]) -> [Int] {
         return positions.map { position in (self.randomPositiveNumberUpTo(10) > 3) ? position + 1 : position }
     }
     
-    func randomPositiveNumberUpTo(uppderBound: Int) -> Int {
+    func randomPositiveNumberUpTo(_ uppderBound: Int) -> Int {
         // arc4random_uniform 返回一个0到上界（不含）的整数
         return Int(arc4random_uniform(UInt32(uppderBound)))
     }
@@ -387,9 +414,9 @@ class ViewController: UIViewController, ZDXLoopScrollViewDataSource, ZDXLoopScro
     
     var myObject: KVOMyClass!
     // KVO
-    override func observeValueForKeyPath(keyPath: String?, ofObject object: AnyObject?, change: [String : AnyObject]?, context: UnsafeMutablePointer<Void>) {
+    override func observeValue(forKeyPath keyPath: String?, of object: Any?, change: [NSKeyValueChangeKey : Any]?, context: UnsafeMutableRawPointer?) {
         if (context == &myContext) {
-            let a = change![NSKeyValueChangeNewKey]!
+            let a = change![NSKeyValueChangeKey.newKey]!
             print("日期发生变化 \(a)")
         }
     }
@@ -399,14 +426,14 @@ let ReuseIdentifier: String = "CellReuseIdentifier"
 extension ViewController: UITableViewDataSource, UITableViewDelegate {
     
     
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return 20
     }
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        var cell: UITableViewCell? = tableView.dequeueReusableCellWithIdentifier(ReuseIdentifier)
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        var cell: UITableViewCell? = tableView.dequeueReusableCell(withIdentifier: ReuseIdentifier)
         if cell == nil {
-            cell = UITableViewCell(style: .Default, reuseIdentifier: ReuseIdentifier)
+            cell = UITableViewCell(style: .default, reuseIdentifier: ReuseIdentifier)
         }
         cell?.textLabel?.text = "第\(indexPath.row)行"
         return cell!
@@ -417,19 +444,19 @@ class Pet {}
 class Cat: Pet {}
 class Dog: Pet {}
 
-func printPet(pet: Pet) {
+func printPet(_ pet: Pet) {
     print("Pet")
 }
 
-func printPet(cat: Cat) {
+func printPet(_ cat: Cat) {
     print("Meow")
 }
 
-func printPet(dog: Dog) {
+func printPet(_ dog: Dog) {
     print("Bark")
 }
 
-func printThem(pet: Pet, _ cat: Cat) {
+func printThem(_ pet: Pet, _ cat: Cat) {
     printPet(cat)
     //    printPet(pet)
     // 对输入类型做判断
@@ -442,8 +469,8 @@ func printThem(pet: Pet, _ cat: Cat) {
 
 /// 属性检查 
 class PropertyCheckClass: Equatable {
-    let oneYearInSecond: NSTimeInterval = 365 * 24 * 60 * 60
-    var date: NSDate {
+    let oneYearInSecond: TimeInterval = 365 * 24 * 60 * 60
+    var date: Date {
         // 在 willSet 和 didSet 中我们分别可以使用 newValue 和 oldValue 来获取将要设定的和已经设定的值。
         willSet {
             let d = date
@@ -453,13 +480,13 @@ class PropertyCheckClass: Equatable {
             // 超过1年时将拦截，设置值的验证
             if date.timeIntervalSinceNow > oneYearInSecond {
                 print("设定的时间太晚了！", terminator: "")
-                date = NSDate().dateByAddingTimeInterval(oneYearInSecond)
+                date = Date().addingTimeInterval(oneYearInSecond)
             }
             print("已经将日期从 \(oldValue) 设定至 \(date)", terminator: "")
         }
     }
     init() {
-        date = NSDate()
+        date = Date()
     }
 }
 
@@ -468,21 +495,18 @@ func ==(lhs: PropertyCheckClass, rhs: PropertyCheckClass) -> Bool {
 }
 
 // 延时调用
-typealias Task = (cancel: Bool) -> Void
+typealias Task = (_ cancel: Bool) -> Void
 
-func delay(time:NSTimeInterval, task:() -> ()) -> Task? {
+func delay(_ time:TimeInterval, task:@escaping () -> ()) -> Task? {
     // 延时执行（Block）方法
-    func dispatch_later(block:() -> ()) {
-        dispatch_after(
-            dispatch_time(
-                DISPATCH_TIME_NOW,
-                Int64(time * Double(NSEC_PER_SEC))),
-            dispatch_get_main_queue(),
-            block)
+    func dispatch_later(_ block:@escaping () -> ()) {
+        DispatchQueue.main.asyncAfter(
+            deadline: DispatchTime.now() + Double(Int64(time * Double(NSEC_PER_SEC))) / Double(NSEC_PER_SEC),
+            execute: block)
     }
     
     // task 为执行的block语句块
-    var closure: dispatch_block_t? = task
+    var closure: (()->())? = task
     // result为方法返回的Task
     var result: Task?
     
@@ -491,7 +515,7 @@ func delay(time:NSTimeInterval, task:() -> ()) -> Task? {
         cancel in
         if let internalClosure = closure {
             if (cancel == false) {
-                dispatch_async(dispatch_get_main_queue(), internalClosure)
+                DispatchQueue.main.async(execute: internalClosure)
             }
         }
         closure = nil
@@ -502,20 +526,20 @@ func delay(time:NSTimeInterval, task:() -> ()) -> Task? {
     
     dispatch_later {
         if let delayedClosure = result {
-            delayedClosure(cancel: false)
+            delayedClosure(false)
         }
     }
     return result
 }
 
-func cancel(task:Task?) {
-    task?(cancel: true)
+func cancel(_ task:Task?) {
+    task?(true)
 }
 
 // KVO应用
 class KVOMyClass: NSObject {
     // 在swift中实现KVO，将要观察对象标记为dynamic
-    dynamic var date = NSDate()
+    dynamic var date = Date()
 }
 
 class ClassA {
@@ -554,6 +578,9 @@ class ViewController0: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
     }
+    @IBAction func imageClick(_ sender: AnyObject) {
+        print("...")
+    }
 }
 
 class ViewController1: UIViewController, UITableViewDataSource {
@@ -561,22 +588,22 @@ class ViewController1: UIViewController, UITableViewDataSource {
         super.viewDidLoad()
     }
     
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return 20
     }
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        var cell: UITableViewCell? = tableView.dequeueReusableCellWithIdentifier(ReuseIdentifier)
+    func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
+        var cell: UITableViewCell? = tableView.dequeueReusableCell(withIdentifier: ReuseIdentifier)
         if cell == nil {
-            cell = UITableViewCell(style: .Default, reuseIdentifier: ReuseIdentifier)
+            cell = UITableViewCell(style: .default, reuseIdentifier: ReuseIdentifier)
         }
         cell?.textLabel?.text = "第\(indexPath.row)行"
         return cell!
     }
     
-    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+    func tableView(_ tableView: UITableView, didSelectRowAtIndexPath indexPath: IndexPath) {
         
-        let VC = UIStoryboard(name: "Main", bundle: nil).instantiateViewControllerWithIdentifier("ViewController0") 
+        let VC = UIStoryboard(name: "Main", bundle: nil).instantiateViewController(withIdentifier: "ViewController0") 
         self.navigationController?.pushViewController(VC, animated: true)
     }
 }
@@ -584,17 +611,17 @@ class ViewController1: UIViewController, UITableViewDataSource {
 class ViewController2: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.view.backgroundColor = UIColor.blueColor()
+        self.view.backgroundColor = UIColor.blue
     }
     
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return 20
     }
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        var cell: UITableViewCell? = tableView.dequeueReusableCellWithIdentifier(ReuseIdentifier)
+    func tableView(_ tableView: UITableView, cellForRowAtIndexPath indexPath: IndexPath) -> UITableViewCell {
+        var cell: UITableViewCell? = tableView.dequeueReusableCell(withIdentifier: ReuseIdentifier)
         if cell == nil {
-            cell = UITableViewCell(style: .Default, reuseIdentifier: ReuseIdentifier)
+            cell = UITableViewCell(style: .default, reuseIdentifier: ReuseIdentifier)
         }
         cell?.textLabel?.text = "第\(indexPath.row)行"
         return cell!
@@ -603,17 +630,17 @@ class ViewController2: UIViewController {
 class ViewController3: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.view.backgroundColor = UIColor.greenColor()
+        self.view.backgroundColor = UIColor.green
     }
     
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return 20
     }
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        var cell: UITableViewCell? = tableView.dequeueReusableCellWithIdentifier(ReuseIdentifier)
+    func tableView(_ tableView: UITableView, cellForRowAtIndexPath indexPath: IndexPath) -> UITableViewCell {
+        var cell: UITableViewCell? = tableView.dequeueReusableCell(withIdentifier: ReuseIdentifier)
         if cell == nil {
-            cell = UITableViewCell(style: .Default, reuseIdentifier: ReuseIdentifier)
+            cell = UITableViewCell(style: .default, reuseIdentifier: ReuseIdentifier)
         }
         cell?.textLabel?.text = "第\(indexPath.row)行"
         return cell!
@@ -622,17 +649,17 @@ class ViewController3: UIViewController {
 class ViewController4: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.view.backgroundColor = UIColor.cyanColor()
+        self.view.backgroundColor = UIColor.cyan
     }
     
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return 20
     }
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        var cell: UITableViewCell? = tableView.dequeueReusableCellWithIdentifier(ReuseIdentifier)
+    func tableView(_ tableView: UITableView, cellForRowAtIndexPath indexPath: IndexPath) -> UITableViewCell {
+        var cell: UITableViewCell? = tableView.dequeueReusableCell(withIdentifier: ReuseIdentifier)
         if cell == nil {
-            cell = UITableViewCell(style: .Default, reuseIdentifier: ReuseIdentifier)
+            cell = UITableViewCell(style: .default, reuseIdentifier: ReuseIdentifier)
         }
         cell?.textLabel?.text = "第\(indexPath.row)行"
         return cell!
@@ -641,17 +668,17 @@ class ViewController4: UIViewController {
 class ViewController5: UIViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.view.backgroundColor = UIColor.orangeColor()
+        self.view.backgroundColor = UIColor.orange
     }
     
-    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
+    func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return 20
     }
     
-    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -> UITableViewCell {
-        var cell: UITableViewCell? = tableView.dequeueReusableCellWithIdentifier(ReuseIdentifier)
+    func tableView(_ tableView: UITableView, cellForRowAtIndexPath indexPath: IndexPath) -> UITableViewCell {
+        var cell: UITableViewCell? = tableView.dequeueReusableCell(withIdentifier: ReuseIdentifier)
         if cell == nil {
-            cell = UITableViewCell(style: .Default, reuseIdentifier: ReuseIdentifier)
+            cell = UITableViewCell(style: .default, reuseIdentifier: ReuseIdentifier)
         }
         cell?.textLabel?.text = "第\(indexPath.row)行"
         return cell!
@@ -660,7 +687,7 @@ class ViewController5: UIViewController {
 
 extension UIViewController {
     // 自定义返回按钮
-    func setNavigationBackTitle(title: String) {
+    func setNavigationBackTitle(_ title: String) {
         // 全局导航栏设置
 //        UINavigationBar.appearance().barTintColor = UIColor.redColor()          // 背景颜色
 //        UINavigationBar.appearance().tintColor = UIColor.whiteColor()           // 返回字体颜色
@@ -672,18 +699,18 @@ extension UIViewController {
 //        self.navigationController?.navigationBar.titleTextAttributes = [NSForegroundColorAttributeName : UIColor.whiteColor() , NSFontAttributeName : UIFont.systemFontOfSize(20)]       // title标题颜色和字体        
         let returnButtonItem = UIBarButtonItem()
         returnButtonItem.title = title;
-        returnButtonItem.setTitleTextAttributes([ NSFontAttributeName : UIFont.systemFontOfSize(15)], forState: UIControlState.Normal)
+        returnButtonItem.setTitleTextAttributes([ NSFontAttributeName : UIFont.systemFont(ofSize: 15)], for: UIControlState())
         self.navigationItem.backBarButtonItem = returnButtonItem;
     }
 }
 
 enum LoginError {
-    case UserNotFound, UserPasswordNotMatch
+    case userNotFound, userPasswordNotMatch
 }
 
-extension SequenceType {
+extension Sequence {
     // 查找第一个符合条件的元素，match为一个函数
-    func findElement(match:Generator.Element -> Bool) -> Generator.Element? {
+    func findElement(_ match:(Iterator.Element) -> Bool) -> Iterator.Element? {
         for element in self where match(element) {
             return element
         }
@@ -691,7 +718,7 @@ extension SequenceType {
     }
     
     // 检查序列中所有元素是否全部满足某个条件
-    public func allMatch(predicate:Generator.Element -> Bool) -> Bool {
+    public func allMatch(_ predicate:(Iterator.Element) -> Bool) -> Bool {
         //  对于一个条件，如果没有元素不满足它的话，那意味着所有元素都满足它
         return !self.contains{ !predicate($0) }
     }
@@ -699,7 +726,7 @@ extension SequenceType {
 
 extension Array {
     // 累加，并记录每步计算结果
-    func accumulate<U>(initial: U, combine: (U, Element) -> U) -> [U] {
+    func accumulate<U>(_ initial: U, combine: (U, Element) -> U) -> [U] {
 //    func accumulate<U>(initial: U, combine: (U, Element) -> U) -> [U] {
         var running = initial
         return self.map {
