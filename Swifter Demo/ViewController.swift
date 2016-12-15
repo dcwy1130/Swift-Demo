@@ -575,9 +575,16 @@ let JSON: Dictionary = ["menu": [
 //}
 
 class ViewController0: UIViewController {
+    
+    @IBOutlet weak var ellipseView: EllipseView!
+    @IBOutlet weak var imageView: UIImageView!
+    
     override func viewDidLoad() {
         super.viewDidLoad()
+        imageView.image = #imageLiteral(resourceName: "7")
+        imageView.image = #imageLiteral(resourceName: "11")
     }
+    
     @IBAction func imageClick(_ sender: AnyObject) {
         print("...")
     }

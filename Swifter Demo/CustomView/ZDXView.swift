@@ -1355,7 +1355,7 @@ final public class ZDXPopupView: UIView {
 // MARK: -  圆形／圆矩形View
 
 @IBDesignable
-final class EllipseView: UIControl {
+final public class EllipseView: UIControl {
     
     @IBInspectable
     var cornerRadius: CGFloat = 0 {
@@ -1378,7 +1378,7 @@ final class EllipseView: UIControl {
         }
     }
 
-    override func draw(_ rect: CGRect) {
+    override public func draw(_ rect: CGRect) {
         if cornerRadius == 0 {
             cornerRadius = rect.width / 2.0
         }
@@ -1388,45 +1388,6 @@ final class EllipseView: UIControl {
         self.layer.borderWidth = borderWidth
     }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

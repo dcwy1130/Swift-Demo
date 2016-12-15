@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="11542" systemVersion="16A323" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="6nP-pH-kF2">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="11762" systemVersion="16C67" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" colorMatched="YES" initialViewController="6nP-pH-kF2">
     <device id="retina4_7" orientation="portrait">
         <adaptation id="fullscreen"/>
     </device>
     <dependencies>
         <deployment identifier="iOS"/>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="11524"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="11757"/>
         <capability name="Aspect ratio constraints" minToolsVersion="5.1"/>
         <capability name="Constraints to layout margins" minToolsVersion="6.0"/>
         <capability name="Constraints with non-1.0 multipliers" minToolsVersion="5.1"/>
@@ -37,7 +37,7 @@
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="MbI-64-dRm" customClass="EllipseView" customModule="Swifter_Demo" customModuleProvider="target">
                                 <rect key="frame" x="53" y="97" width="112.5" height="112.5"/>
                                 <subviews>
-                                    <imageView userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" image="7" translatesAutoresizingMaskIntoConstraints="NO" id="Nqi-LU-kzM">
+                                    <imageView userInteractionEnabled="NO" contentMode="scaleAspectFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="Nqi-LU-kzM">
                                         <rect key="frame" x="0.0" y="0.0" width="112.5" height="112.5"/>
                                     </imageView>
                                 </subviews>
@@ -81,6 +81,9 @@
                         </constraints>
                     </view>
                     <navigationItem key="navigationItem" title="个人中心" id="fC9-TO-5Ei"/>
+                    <connections>
+                        <outlet property="imageView" destination="Nqi-LU-kzM" id="XuY-B4-yt5"/>
+                    </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="dzI-K6-lQx" userLabel="First Responder" sceneMemberID="firstResponder"/>
             </objects>
@@ -377,7 +380,4 @@
             <point key="canvasLocation" x="126" y="338"/>
         </scene>
     </scenes>
-    <resources>
-        <image name="7" width="400" height="250"/>
-    </resources>
 </document>
