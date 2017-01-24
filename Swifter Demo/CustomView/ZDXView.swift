@@ -1192,10 +1192,16 @@ final public class ZDXPopupView: UIView {
             keyFrameAnimation.keyPath = "transform"
             keyFrameAnimation.duration = duration
             keyFrameAnimation.values = [NSValue(caTransform3D: CATransform3DMakeScale(0.01, 0.01, 1.0)),
-                                        NSValue(caTransform3D: CATransform3DMakeScale(1.2, 1.2, 1.0)),
+                                        NSValue(caTransform3D: CATransform3DMakeScale(0.6, 0.6, 1.0)),
+                                        NSValue(caTransform3D: CATransform3DMakeScale(0.7, 0.7, 1.0)),
                                         NSValue(caTransform3D: CATransform3DMakeScale(0.8, 0.8, 1.0)),
-                                        NSValue(caTransform3D: CATransform3DIdentity),]
-            keyFrameAnimation.keyTimes = [0.2, 0.5, 0.75, 1.0]
+                                        NSValue(caTransform3D: CATransform3DMakeScale(0.9, 0.9, 1.0)),
+                                        NSValue(caTransform3D: CATransform3DMakeScale(1.0, 1.0, 1.0)),
+                                        NSValue(caTransform3D: CATransform3DMakeScale(1.05, 1.05, 1.0)),
+                                        NSValue(caTransform3D: CATransform3DMakeScale(1.1, 1.1, 1.0)),
+                                        NSValue(caTransform3D: CATransform3DMakeScale(1.05, 1.05, 1.0)),
+                                        NSValue(caTransform3D: CATransform3DIdentity)]
+            keyFrameAnimation.keyTimes = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
             keyFrameAnimation.timingFunction = CAMediaTimingFunction(name: kCAMediaTimingFunctionLinear)
             showAnimation = keyFrameAnimation            
             break
@@ -1246,9 +1252,17 @@ final public class ZDXPopupView: UIView {
             let keyFrameAnimation: CAKeyframeAnimation = CAKeyframeAnimation()
             keyFrameAnimation.keyPath = "transform"
             keyFrameAnimation.duration = duration
-            keyFrameAnimation.values = [NSValue(caTransform3D: CATransform3DMakeScale(1.2, 1.2, 1.0)),
+            keyFrameAnimation.values = [NSValue(caTransform3D: CATransform3DMakeScale(1.0, 1.0, 1.0)),
+                                        NSValue(caTransform3D: CATransform3DMakeScale(0.9, 0.9, 1.0)),
+                                        NSValue(caTransform3D: CATransform3DMakeScale(0.8, 0.8, 1.0)),
+                                        NSValue(caTransform3D: CATransform3DMakeScale(0.7, 0.7, 1.0)),
+                                        NSValue(caTransform3D: CATransform3DMakeScale(0.6, 0.6, 1.0)),
+                                        NSValue(caTransform3D: CATransform3DMakeScale(0.5, 0.5, 1.0)),
+                                        NSValue(caTransform3D: CATransform3DMakeScale(0.4, 0.4, 1.0)),
+                                        NSValue(caTransform3D: CATransform3DMakeScale(0.3, 0.3, 1.0)),
+                                        NSValue(caTransform3D: CATransform3DMakeScale(0.2, 0.2, 1.0)),
                                         NSValue(caTransform3D: CATransform3DMakeScale(0.01, 0.01, 0.01))]
-            keyFrameAnimation.keyTimes = [0.2, 1.0]
+            keyFrameAnimation.keyTimes = [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0]
             keyFrameAnimation.timingFunction = CAMediaTimingFunction(name: kCAMediaTimingFunctionLinear)
             hideAnimation = keyFrameAnimation
             break

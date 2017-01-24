@@ -362,7 +362,7 @@ class ViewController: UIViewController, ZDXLoopScrollViewDataSource, ZDXLoopScro
         } else {
             self.count += 1
         }
-        popupView.animationType = ZDXPopupViewAnimation(rawValue: self.count)!
+        // popupView.animationType = ZDXPopupViewAnimation(rawValue: self.count)!
         popupView.show()
     }
     
